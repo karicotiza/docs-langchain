@@ -6,7 +6,7 @@ from src.introduction import chat, message
 
 
 def test_invoke() -> None:
-    """Test ChatOllama invoke method."""
+    """Test invoke method."""
     response: BaseMessage = chat.invoke(message)
 
     assert response.content == (

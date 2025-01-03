@@ -1,0 +1,21 @@
+name: ms
+
+services:
+  ollama-llama3.2-3b:
+    container_name: ms-ollama-llama3.2-3b
+    image: ollama/ollama:0.5.4
+    restart: always
+    ports:
+      - 11434:11434
+    volumes:
+      - ../build/:/build/:ro
+    post_start:
+      - command: bash /build/download_llama_model.sh
+        user: root
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

@@ -1,0 +1,4 @@
+wemake-python-styleguide==1.0.0
+pytest==8.3.4
+langchain==0.3.13
+langchain-ollama==0.2.2

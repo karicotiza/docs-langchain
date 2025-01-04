@@ -2,6 +2,7 @@
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 documents: list[Document] = [
@@ -17,3 +18,11 @@ documents: list[Document] = [
 
 loader: PyPDFLoader = PyPDFLoader('data/nke-10k-2023.pdf')
 docs: list[Document] = loader.load()
+
+_chunk_size: int = 1000
+_chunk_overlap: int = 200
+text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
+    chunk_size=_chunk_size, chunk_overlap=_chunk_overlap, add_start_index=True,
+)
+
+all_splits: list[Document] = text_splitter.split_documents(docs)

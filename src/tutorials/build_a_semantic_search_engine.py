@@ -2,6 +2,7 @@
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
+from langchain_milvus import Milvus
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -36,3 +37,13 @@ embeddings: OllamaEmbeddings = OllamaEmbeddings(
 
 first_vector: list[float] = embeddings.embed_query(all_splits[0].page_content)
 second_vector: list[float] = embeddings.embed_query(all_splits[1].page_content)
+
+vector_store: Milvus = Milvus(
+    embedding_function=embeddings,
+    auto_id=True,
+)
+
+# Remove all data in milvus
+vector_store.delete(expr='pk > 0')
+
+ids: list[str] = vector_store.add_documents(all_splits)

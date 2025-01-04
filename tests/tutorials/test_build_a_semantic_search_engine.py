@@ -1,10 +1,13 @@
 """Test build a semantic search engine module."""
 
+from langchain_core.documents import Document
+
 from src.tutorials.build_a_semantic_search_engine import (
     all_splits,
     docs,
     first_vector,
     second_vector,
+    vector_store,
 )
 
 
@@ -64,3 +67,30 @@ def test_embedding_model() -> None:
     assert len(first_vector) == len(second_vector)
     assert len(first_vector) == reference_length
     assert first_vector[:10] == reference_first_vector
+
+
+def test_vector_store() -> None:
+    """Test vector store."""
+    results: list[Document] = vector_store.similarity_search(
+        "How many distribution centers does Nike have in the US?"
+    )
+
+    result_reference: str = ' '.join((
+        'operations. We also lease an office complex in Shanghai, China,',
+        'our headquarters for our Greater China geography, occupied by',
+        'employees focused on implementing our\nwholesale, NIKE Direct',
+        'and merchandising strategies in the region, among other',
+        'functions.\nIn the United States, NIKE has eight significant',
+        'distribution centers. Five are located in or near Memphis,',
+        'Tennessee, two of which are owned and three of which are\nleased.',
+        'Two other distribution centers, one located in Indianapolis,',
+        'Indiana and one located in Dayton, Tennessee, are leased and',
+        'operated by third-party logistics\nproviders. One distribution',
+        'center for Converse is located in Ontario, California, which is',
+        'leased. NIKE has a number of distribution facilities outside the',
+        'United States,\nsome of which are leased and operated by third-party',
+        'logistics providers. The most significant distribution',
+        'facilities outside the United States are located in Laakdal,',
+    ))
+
+    assert results[0].page_content == result_reference

@@ -5,9 +5,13 @@ from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 
-from src.settings import model, temperature
+from src.settings import llm_model_url, llm_model_name, llm_model_temperature
 
-chat: ChatOllama = ChatOllama(model=model, temperature=temperature)
+chat: ChatOllama = ChatOllama(
+    base_url=llm_model_url,
+    model=llm_model_name,
+    temperature=llm_model_temperature
+)
 
 messages: list[HumanMessage | SystemMessage] = [
     SystemMessage('Translate the following from English into Italian'),

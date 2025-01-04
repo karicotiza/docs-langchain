@@ -19,3 +19,22 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+  
+  ollama-bge-m3:
+    container_name: ms-ollama-bge-m3
+    image: ollama/ollama:0.5.4
+    restart: always
+    ports:
+      - 11435:11434
+    volumes:
+      - ../build/:/build/:ro
+    post_start:
+      - command: bash /build/download_bge_model.sh
+        user: root
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

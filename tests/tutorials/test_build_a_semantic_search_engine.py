@@ -1,6 +1,11 @@
 """Test build a semantic search engine module."""
 
-from src.tutorials.build_a_semantic_search_engine import docs, all_splits
+from src.tutorials.build_a_semantic_search_engine import (
+    all_splits,
+    docs,
+    first_vector,
+    second_vector,
+)
 
 
 def test_docs_length() -> None:
@@ -38,3 +43,24 @@ def test_all_splits_length() -> None:
     reference_length: int = 516
 
     assert len(all_splits) == reference_length
+
+
+def test_embedding_model() -> None:
+    """Test embedding model."""
+    reference_length: int = 1024
+    reference_first_vector: list[float] = [
+        -0.042318076,
+        -0.024977539,
+        -0.04551967,
+        0.014961654,
+        -0.0020620648,
+        -0.019979082,
+        0.0136758275,
+        -0.0006364515,
+        0.0006704848,
+        0.04520819,
+    ]
+
+    assert len(first_vector) == len(second_vector)
+    assert len(first_vector) == reference_length
+    assert first_vector[:10] == reference_first_vector

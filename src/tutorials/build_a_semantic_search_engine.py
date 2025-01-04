@@ -2,8 +2,10 @@
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
+from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from src.settings import embedding_model_name, embedding_model_url
 
 documents: list[Document] = [
     Document(
@@ -26,3 +28,11 @@ text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
 )
 
 all_splits: list[Document] = text_splitter.split_documents(docs)
+
+embeddings: OllamaEmbeddings = OllamaEmbeddings(
+    base_url=embedding_model_url,
+    model=embedding_model_name,
+)
+
+first_vector: list[float] = embeddings.embed_query(all_splits[0].page_content)
+second_vector: list[float] = embeddings.embed_query(all_splits[1].page_content)

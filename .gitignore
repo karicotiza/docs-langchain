@@ -3,3 +3,7 @@
 .env
 
 __pycache__
+
+backup/etcd
+backup/milvus
+backup/minio

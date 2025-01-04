@@ -4,6 +4,9 @@ langchain==0.3.13
 # LangChain integration with Ollama. Ollama is a self-hosted LLM server
 langchain-ollama==0.2.2
 
+# LangChain integration with Milvus. Milvus is a self-hosted vector database
+langchain-milvus==0.1.7
+
 # LangChain community integrations. Batteries for LangChain
 langchain_community==0.3.14
 

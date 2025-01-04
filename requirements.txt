@@ -4,9 +4,14 @@ langchain==0.3.13
 # LangChain integration with Ollama. Ollama is a self-hosted LLM server
 langchain-ollama==0.2.2
 
+# LangChain community integrations. Batteries for LangChain
+langchain_community==0.3.14
+
+# PDF loader
+pypdf==5.1.0
+
 # Linter
 wemake-python-styleguide==1.0.0
 
 # Tests
 pytest==8.3.4
-

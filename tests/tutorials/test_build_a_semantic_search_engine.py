@@ -1,5 +1,6 @@
 """Test build a semantic search engine module."""
 
+import pytest
 from langchain_core.documents import Document
 
 from src.tutorials.build_a_semantic_search_engine import (
@@ -8,6 +9,10 @@ from src.tutorials.build_a_semantic_search_engine import (
     first_vector,
     second_vector,
     vector_store,
+)
+
+pytest_plugins: tuple[str, ...] = (
+    'pytest_asyncio',
 )
 
 
@@ -91,6 +96,33 @@ def test_vector_store() -> None:
         'United States,\nsome of which are leased and operated by third-party',
         'logistics providers. The most significant distribution',
         'facilities outside the United States are located in Laakdal,',
+    ))
+
+    assert results[0].page_content == result_reference
+
+
+@pytest.mark.asyncio
+async def test_async_vector_store() -> None:
+    """Test async vector store."""
+    results: list[Document] = await vector_store.asimilarity_search(
+        'When was Nike incorporated?'
+    )
+
+    result_reference: str = ''.join((
+        'Table of Contents\nPART I\nITEM 1. BUSINESS\nGENERAL\nNIKE, Inc. ',
+        'was incorporated in 1967 under the laws of the State of Oregon. As ',
+        'used in this Annual Report on Form 10-K (this "Annual Report"), the ',
+        'terms "we," "us," "our,"\n"NIKE" and the "Company" refer to NIKE, ',
+        'Inc. and its predecessors, subsidiaries and affiliates, ',
+        'collectively, unless the context indicates otherwise.\nOur ',
+        'principal business activity is the design, development and ',
+        'worldwide marketing and selling of athletic footwear, apparel, ',
+        'equipment, accessories and services. NIKE is\nthe largest seller of ',
+        'athletic footwear and apparel in the world. We sell our products ',
+        'through NIKE Direct operations, which are comprised of both ',
+        'NIKE-owned retail stores\nand sales through our digital platforms ',
+        '(also referred to as "NIKE Brand Digital"), to retail accounts and ',
+        'to a mix of independent distributors, licensees and sales',
     ))
 
     assert results[0].page_content == result_reference

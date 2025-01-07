@@ -9,6 +9,7 @@ from src.tutorials.build_a_semantic_search_engine import (
     first_vector,
     second_vector,
     vector_store,
+    embeddings,
 )
 
 pytest_plugins: tuple[str, ...] = (
@@ -158,3 +159,35 @@ def test_similarity_search_with_score() -> None:
 
     assert score == score_reference
     assert doc.page_content == result_reference
+
+
+def test_similarity_search_by_vector() -> None:
+    """Test similarity search by vector."""
+    embedding: list[float] = embeddings.embed_query(
+        "How were Nike's margins impacted in 2023?",
+    )
+
+    results: list[Document] = vector_store.similarity_search_by_vector(
+        embedding,
+    )
+
+    result_reference: str = ''.join((
+        'Table of Contents\nGROSS MARGIN\nFISCAL 2023 COMPARED TO FISCAL 2022',
+        '\nFor fiscal 2023, our consolidated gross profit increased 4% to ',
+        '$22,292 million compared to $21,479 million for fiscal 2022. Gross ',
+        'margin decreased 250 basis points to\n43.5% for fiscal 2023 ',
+        'compared to 46.0% for fiscal 2022 due to the following:\n*Wholesale ',
+        'equivalent\nThe decrease in gross margin for fiscal 2023 was ',
+        'primarily due to:\n• Higher NIKE Brand product costs, on a ',
+        'wholesale equivalent basis, primarily due to higher input costs and ',
+        'elevated inbound freight and logistics costs as well as\nproduct ',
+        'mix;\n• Lower margin in our NIKE Direct business, driven by higher ',
+        'promotional activity to liquidate inventory in the current period ',
+        'compared to lower promotional activity in\nthe prior period ',
+        'resulting from lower available inventory supply;\n• Unfavorable ',
+        'changes in net foreign currency exchange rates, including hedges; ',
+        'and\n• Lower off-price margin, on a wholesale equivalent basis.',
+        '\nThis was partially offset by:',
+    ))
+
+    assert results[0].page_content == result_reference

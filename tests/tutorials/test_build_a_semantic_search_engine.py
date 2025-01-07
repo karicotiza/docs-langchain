@@ -126,3 +126,35 @@ async def test_async_vector_store() -> None:
     ))
 
     assert results[0].page_content == result_reference
+
+
+def test_similarity_search_with_score() -> None:
+    """Test similarity search with score."""
+    results: list[tuple[Document, float]] = (
+        vector_store.similarity_search_with_score(
+            "What was Nike's revenue in 2023?"
+        )
+    )
+    doc, score = results[0]
+
+    score_reference: float = 0.5996204018592834
+    result_reference: str = ''.join((
+        'Table of Contents\nFISCAL 2023 NIKE BRAND REVENUE HIGHLIGHTSThe ',
+        'following tables present NIKE Brand revenues disaggregated by ',
+        'reportable operating segment, distribution channel and major ',
+        'product line:\nFISCAL 2023 COMPARED TO FISCAL 2022\n• NIKE, Inc. ',
+        'Revenues were $51.2 billion in fiscal 2023, which increased 10% ',
+        'and 16% compared to fiscal 2022 on a reported and currency-neutral ',
+        'basis, respectively.\nThe increase was due to higher revenues in ',
+        'North America, Europe, Middle East & Africa ("EMEA"), APLA and ',
+        'Greater China, which contributed approximately 7, 6,\n2 and 1 ',
+        'percentage points to NIKE, Inc. Revenues, respectively.\n• NIKE ',
+        'Brand revenues, which represented over 90% of NIKE, Inc. Revenues, ',
+        'increased 10% and 16% on a reported and currency-neutral basis, ',
+        'respectively. This\nincrease was primarily due to higher revenues ',
+        "in Men's, the Jordan Brand, Women's and Kids' which grew 17%, ",
+        '35%,11% and 10%, respectively, on a wholesale\nequivalent basis.',
+    ))
+
+    assert score == score_reference
+    assert doc.page_content == result_reference

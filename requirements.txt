@@ -14,6 +14,7 @@ langchain_community==0.3.14
 pypdf==5.1.0
 
 # Linter
+ruff==0.8.5
 wemake-python-styleguide==1.0.0
 
 # Tests

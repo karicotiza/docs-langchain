@@ -1,0 +1,8 @@
+[tool.ruff]
+lint.select = ["ALL"]
+
+# D211 is incompatible with D203 and D211 have higher priority.
+# D212 is incompatible with D213 and D212 have higher priority.
+lint.ignore = ["D203", "D213"]
+
+line-length = 80

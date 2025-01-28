@@ -6,7 +6,11 @@ Classify text into labels.
 from typing import TYPE_CHECKING, Any
 
 from src.tutorials.classify_text_into_labels import (
-    Classification,
+    AggressivenessChoice,
+    LanguageChoice,
+    SentimentChoice,
+    finer_llm,
+    finer_tagging_prompt,
     llm,
     tagging_prompt,
 )
@@ -25,11 +29,9 @@ def test_structured_output() -> None:
     prompt: PromptValue = tagging_prompt.invoke({"input": inp})
     response: Any = llm.invoke(prompt)
 
-    assert response == Classification(
-        sentiment="positive",
-        aggressiveness=1,
-        language="Spanish",
-    )
+    assert response.sentiment == "positive"
+    assert response.aggressiveness == 1
+    assert response.language == "Spanish"
 
 
 def test_dictionary_output() -> None:
@@ -39,7 +41,22 @@ def test_dictionary_output() -> None:
     response: Any = llm.invoke(prompt)
 
     assert response.dict() == {
-        "sentiment": "angry",
-        "aggressiveness": 1,
+        "sentiment": "negative",
+        "aggressiveness": 9,
         "language": "Spanish",
     }
+
+
+def test_finer_structured_output() -> None:
+    """Test runnable's with structured output method with finer model."""
+    inp: str = (
+        "Estoy increiblemente contento de haberte conocido! "
+        "Creo que seremos muy buenos amigos!"
+    )
+
+    prompt: PromptValue = finer_tagging_prompt.invoke({"input": inp})
+    response: Any = finer_llm.invoke(prompt)
+
+    assert response.sentiment == SentimentChoice.happy
+    assert response.aggressiveness == AggressivenessChoice.two
+    assert response.language == LanguageChoice.spanish

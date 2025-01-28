@@ -47,6 +47,6 @@ vector_store: Milvus = Milvus(
 )
 
 # Remove all data in milvus
-# vector_store.delete(expr="pk > 0")
+vector_store.delete(expr="pk > 0")
 
-# ids: list[str] = vector_store.add_documents(all_splits)
+ids: list[str] = vector_store.add_documents(all_splits)

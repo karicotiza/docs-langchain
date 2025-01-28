@@ -16,8 +16,10 @@ line-length = 80
 
 [tool.flake8]
 # You can ignore these rules in tests, but not in source code.
-# "WPS202" Too many module members.
 # "WPS110" Wrong variable names.
+# "WPS114" Wrong function names.
+# "WPS202" Too many module members.
+# "WPS226" String over-use.
 per-file-ignores = """
-    tests/**/*.py: WPS202, WPS110
+    tests/**/*.py: WPS110, WPS114, WPS202, WPS226
 """

@@ -1,8 +1,23 @@
 [tool.ruff]
 lint.select = ["ALL"]
 
-# D211 is incompatible with D203 and D211 have higher priority.
-# D212 is incompatible with D213 and D212 have higher priority.
-lint.ignore = ["D203", "D213"]
+lint.ignore = [
+    "D203",  # D211 is incompatible with D203 and D211 have higher priority.
+    "D213",  # D212 is incompatible with D213 and D212 have higher priority.
+]
 
 line-length = 80
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    # You can ignore these rules in tests, but not in source code.
+    "S101",  # Usage of assert statements.
+]
+
+[tool.flake8]
+# You can ignore these rules in tests, but not in source code.
+# "WPS202" Too many module members.
+# "WPS110" Wrong variable names.
+per-file-ignores = """
+    tests/**/*.py: WPS202, WPS110
+"""

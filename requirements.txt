@@ -16,6 +16,7 @@ pypdf==5.1.0
 # Linter
 ruff==0.8.5
 wemake-python-styleguide==1.0.0
+flake8-pyproject==1.2.3
 
 # Tests
 pytest==8.3.4

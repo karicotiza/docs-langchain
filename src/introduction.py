@@ -1,13 +1,16 @@
-"""Introduction."""
+"""Tutorial module.
+
+Introduction.
+"""
 
 from langchain_ollama import ChatOllama
 
-from src.settings import llm_model_url, llm_model_name, llm_model_temperature
+from src.settings import llm_model_name, llm_model_temperature, llm_model_url
 
 chat: ChatOllama = ChatOllama(
     base_url=llm_model_url,
     model=llm_model_name,
-    temperature=llm_model_temperature
+    temperature=llm_model_temperature,
 )
 
-message: str = 'Hello, world!'
+message: str = "Hello, world!"

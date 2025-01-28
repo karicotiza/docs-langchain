@@ -1,4 +1,7 @@
-"""Build a semantic search engine module."""
+"""Tutorial module.
+
+Build a semantic search engine module.
+"""
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
@@ -10,16 +13,16 @@ from src.settings import embedding_model_name, embedding_model_url
 
 documents: list[Document] = [
     Document(
-        'Dogs are great companions, known for their loyalty and friendliness.',
-        metadata={'source': 'mammal-pets-doc'},
+        "Dogs are great companions, known for their loyalty and friendliness.",
+        metadata={"source": "mammal-pets-doc"},
     ),
     Document(
-        'Cats are independent pets that often enjoy their own space.',
-        metadata={'source': 'mammal-pets-doc'},
-    )
+        "Cats are independent pets that often enjoy their own space.",
+        metadata={"source": "mammal-pets-doc"},
+    ),
 ]
 
-loader: PyPDFLoader = PyPDFLoader('data/nke-10k-2023.pdf')
+loader: PyPDFLoader = PyPDFLoader("data/nke-10k-2023.pdf")
 docs: list[Document] = loader.load()
 
 _chunk_size: int = 1000
@@ -44,6 +47,6 @@ vector_store: Milvus = Milvus(
 )
 
 # Remove all data in milvus
-vector_store.delete(expr='pk > 0')
+# vector_store.delete(expr="pk > 0")
 
-ids: list[str] = vector_store.add_documents(all_splits)
+# ids: list[str] = vector_store.add_documents(all_splits)

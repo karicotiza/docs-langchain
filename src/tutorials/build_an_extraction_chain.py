@@ -1,6 +1,10 @@
 """Test module.
 
 Build an extraction chain.
+
+Notes:
+* Sometimes Alan Smith's heigh is '1.83' and sometimes '1.8'.
+
 """
 
 from __future__ import annotations
@@ -9,7 +13,7 @@ from typing import TYPE_CHECKING
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.settings import llm_model_name, llm_model_temperature, llm_model_url
 
@@ -30,9 +34,13 @@ class Person(BaseModel):
         description="The color of the person's hair if known",
     )
 
-    height: float | None = Field(
+    height: str | None = Field(
         default=None,
         description="Height measured in meters",
+    )
+
+    model_config = ConfigDict(
+        coerce_numbers_to_str=True,
     )
 
 
@@ -57,3 +65,12 @@ chat: ChatOllama = ChatOllama(
 )
 
 structured_llm: Runnable = chat.with_structured_output(Person)
+
+
+class Persons(BaseModel):
+    """Extracted data about people."""
+
+    persons: list[Person]
+
+
+second_structured_llm: Runnable = chat.with_structured_output(Persons)

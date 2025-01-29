@@ -40,7 +40,7 @@ def test_dictionary_output() -> None:
     prompt: PromptValue = tagging_prompt.invoke({"input": inp})
     response: Any = llm.invoke(prompt)
 
-    assert response.dict() == {
+    assert response.model_dump() == {
         # "sentiment": "angry",
         "sentiment": "negative",
         # "aggressiveness": 10,

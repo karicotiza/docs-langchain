@@ -24,3 +24,6 @@ line-length = 80
 per-file-ignores = """
     tests/**/*.py: WPS110, WPS114, WPS202, WPS226
 """
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"

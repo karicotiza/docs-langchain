@@ -41,7 +41,9 @@ def test_dictionary_output() -> None:
     response: Any = llm.invoke(prompt)
 
     assert response.dict() == {
+        # "sentiment": "angry",
         "sentiment": "negative",
+        # "aggressiveness": 10,
         "aggressiveness": 9,
         "language": "Spanish",
     }
@@ -62,7 +64,7 @@ def test_finer_structured_output_1() -> None:
     assert response.language == LanguageChoice.spanish
 
 
-def test_finer_structure_output_2() -> None:
+def test_finer_structured_output_2() -> None:
     """Test runnable's with structured output method with finer model."""
     inp: str = "Estoy muy enojado con vos! Te voy a dar tu merecido!"
 
@@ -70,11 +72,12 @@ def test_finer_structure_output_2() -> None:
     response: Any = finer_llm.invoke(prompt)
 
     assert response.sentiment == SentimentChoice.sad
+    # assert response.aggressiveness == AggressivenessChoice.eight
     assert response.aggressiveness == AggressivenessChoice.nine
     assert response.language == LanguageChoice.spanish
 
 
-def test_finer_structure_output_3() -> None:
+def test_finer_structured_output_3() -> None:
     """Test runnable's with structured output method with finer model."""
     inp: str = (
         "Weather is ok here, I can go outside without much more than a coat"

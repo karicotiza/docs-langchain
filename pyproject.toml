@@ -4,6 +4,7 @@ lint.select = ["ALL"]
 lint.ignore = [
     "D203",  # D211 is incompatible with D203 and D211 have higher priority.
     "D213",  # D212 is incompatible with D213 and D212 have higher priority.
+    "ERA001",  # In this project i had to leave some unused code for notes.
 ]
 
 line-length = 80

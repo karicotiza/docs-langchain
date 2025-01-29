@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.utils.function_calling import tool_example_to_messages
 from langchain_ollama import ChatOllama
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -74,3 +75,46 @@ class Persons(BaseModel):
 
 
 second_structured_llm: Runnable = chat.with_structured_output(Persons)
+
+messages: list[dict[str, str]] = [
+    {"role": "user", "content": "2 🦜 2"},
+    {"role": "assistant", "content": "4"},
+    {"role": "user", "content": "2 🦜 3"},
+    {"role": "assistant", "content": "5"},
+    {"role": "user", "content": "3 🦜 4"},
+]
+
+tool_examples: list[tuple[str, Persons]] = [
+    (
+        "The ocean is vast and blue. It's more than 20,000 feet deep.",
+        Persons(
+            persons=[],
+        ),
+    ),
+    (
+        "Fiona traveled far from France to Spain.",
+        Persons(
+            persons=[
+                Person(name="Fiona", height=None, hair_color=None),
+            ],
+        ),
+    ),
+]
+
+tool_messages: list = []
+
+for txt, tool_call in tool_examples:
+    if tool_call.persons:
+        ai_response: str = "Detected people."
+
+    else:
+        ai_response = "Detected no people."
+
+    tool_messages.extend(
+        tool_example_to_messages(txt, [tool_call], ai_response=ai_response),
+    )
+
+message_no_extraction: dict[str, str] = {
+    "role": "user",
+    "content": "The solar system is large, but earth has only 1 moon.",
+}

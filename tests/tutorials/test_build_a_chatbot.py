@@ -9,11 +9,9 @@ import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from src.tutorials.build_a_chatbot import app, chat
+from src.tutorials.build_a_chatbot import app, chat, pirate_app
 
-pytest_plugins: tuple[str, ...] = (
-    "pytest_asyncio",
-)
+pytest_plugins: tuple[str, ...] = ("pytest_asyncio",)
 
 
 def test_model_without_memory() -> None:
@@ -187,4 +185,42 @@ async def test_app_memory_async() -> None:
         """You didn't tell me your last name, just "Bob". """
         "I don't have any additional information about you beyond that. "
         "Would you like to share it with me?"
+    )
+
+
+def test_pirate_app() -> None:
+    """Test pirate app."""
+    config_1: RunnableConfig = RunnableConfig(
+        {
+            "configurable": {"thread_id": "abc345"},
+        },
+    )
+
+    response_1: dict[str, Any] | Any = pirate_app.invoke(
+        {
+            "messages": [HumanMessage("Hi! I'm Jim.")],
+        },
+        config_1,
+    )
+
+    assert response_1["messages"][-1].content == (
+        "Yer lookin' fer a chat, eh? Well, matey Jim, welcome aboard! "
+        "I be happy to have ye as me guest. "
+        "What be bringin' ye to these fair waters today? "
+        "Got any questions or just want to spin some yarns with ol' "
+        "Blackbeak Betty?"
+    )
+
+    response_2: dict[str, Any] | Any = pirate_app.invoke(
+        {
+            "messages": [HumanMessage("What's my name")],
+        },
+        config_1,
+    )
+
+    assert response_2["messages"][-1].content == (
+        "Arrr, ye be askin' yer own name, eh? Yer name be Jim, matey! "
+        "Don't ye remember? I told ye that already, but never mind. "
+        "Ye can just call yerself Jim, and we'll get along just fine. "
+        "Now, what's on yer mind, Jim?"
     )

@@ -9,7 +9,7 @@ import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from src.tutorials.build_a_chatbot import app, chat, pirate_app
+from src.tutorials.build_a_chatbot import app, chat, pirate_app, polyglot_app
 
 pytest_plugins: tuple[str, ...] = ("pytest_asyncio",)
 
@@ -219,8 +219,43 @@ def test_pirate_app() -> None:
     )
 
     assert response_2["messages"][-1].content == (
-        "Arrr, ye be askin' yer own name, eh? Yer name be Jim, matey! "
-        "Don't ye remember? I told ye that already, but never mind. "
-        "Ye can just call yerself Jim, and we'll get along just fine. "
-        "Now, what's on yer mind, Jim?"
+        "Arrr, ye be askin' about yer own name, eh? Yer name be Jim, matey! "
+        "Don't ye remember? I told ye that already, but I suppose ye were too "
+        "busy swabbin' the decks to pay attention. "
+        "Now, let's get back to more important things... "
+        "like findin' the hidden treasure or avoidin' the Royal Navy!"
+    )
+
+
+def test_polyglot_app() -> None:
+    """Test polyglot app."""
+    config: RunnableConfig = RunnableConfig(
+        {
+            "configurable": {"thread_id": "abc456"},
+        },
+    )
+
+    language: str = "Spanish"
+
+    response_1: dict[str, Any] | Any = polyglot_app.invoke(
+        {
+            "messages": [HumanMessage("Hi! I'm Bob.")],
+            "language": language,
+        },
+        config,
+    )
+
+    assert response_1["messages"][-1].content == (
+        "Hola Bob, ¿cómo estás? (Hello Bob, how are you?)"
+    )
+
+    response_2: dict[str, Any] | Any = polyglot_app.invoke(
+        {
+            "messages": [HumanMessage("What is my name?")],
+        },
+        config,
+    )
+
+    assert response_2["messages"][-1].content == (
+        "Tu nombre es Bob. (Your name is Bob.)"
     )

@@ -10,6 +10,9 @@ langchain-milvus==0.1.7
 # LangChain community integrations. Batteries for LangChain
 langchain_community==0.3.14
 
+# LangChain memory for chats
+langgraph==0.2.69
+
 # PDF loader
 pypdf==5.1.0
 

@@ -251,8 +251,10 @@ def test_polyglot_app() -> None:
 
 def test_trimmed_app_1() -> None:
     """Test trimmed app."""
+    language: str = "English"
+
     response: dict[str, Any] | Any = trimmed_app.invoke(
-        _input([*messages_to_trim, _what_is_my_name()], "English"),
+        _input([*messages_to_trim, _what_is_my_name()], language),
         _config("abc567"),
     )
 
@@ -266,9 +268,10 @@ def test_trimmed_app_1() -> None:
 def test_trimmed_app_2() -> None:
     """Test trimmed app."""
     message: str = "What math problem did I ask?"
+    language: str = "English"
 
     response: dict[str, Any] | Any = trimmed_app.invoke(
-        _input([*messages_to_trim, HumanMessage(message)], "English"),
+        _input([*messages_to_trim, HumanMessage(message)], language),
         _config("abc678"),
     )
 
@@ -278,10 +281,11 @@ def test_trimmed_app_2() -> None:
 def test_app_stream() -> None:
     """Test app's stream."""
     message: str = "Hi I'm Todd, please tell me a joke."
+    language: str = "English"
     memory: list[str] = []
 
     for chunk, _ in trimmed_app.stream(
-        _input([HumanMessage(message)], "English"),
+        _input([HumanMessage(message)], language),
         _config("abc789"),
         stream_mode="messages",
     ):

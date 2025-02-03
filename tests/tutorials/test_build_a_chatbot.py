@@ -317,3 +317,33 @@ def test_trimmed_app_2() -> None:
     assert response["messages"][-1].content == (
         'You asked me "whats 2 + 2".'
     )
+
+
+def test_app_stream() -> None:
+    """Test app's stream."""
+    config: RunnableConfig = RunnableConfig(
+        {"configurable": {"thread_id": "abc789"}},
+    )
+
+    memory: list[str] = []
+
+    for chunk, _ in trimmed_app.stream(
+        {
+            "messages": [HumanMessage("Hi I'm Todd, please tell me a joke.")],
+            "language": "English",
+        },
+        config,
+        stream_mode="messages",
+    ):
+        if isinstance(chunk, AIMessage):
+            memory.append(chunk.content)
+            memory.append("|")
+
+    assert "".join(memory) == (
+        "Hi| Todd|!| Here|'s| one| for| you|:\n\n"
+        "|What| do| you| call| a| fake| nood|le|?\n\n"
+        "|(wait| for| it|...)\n\n"
+        "|An| imp|asta|!\n\n"
+        "|Hope| that| made| you| smile|!| "
+        "Do| you| want| to| hear| another| one|?||"
+    )

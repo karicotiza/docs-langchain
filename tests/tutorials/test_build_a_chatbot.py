@@ -21,20 +21,39 @@ from src.tutorials.build_a_chatbot import (
 pytest_plugins: tuple[str, ...] = ("pytest_asyncio",)
 
 
+def _what_is_my_name() -> HumanMessage:
+    return HumanMessage("What's my name?")
+
+
+def _chunk_to_string(chunk: AIMessage) -> str:
+    content: str | list[str | dict[Any, Any]] = chunk.content
+
+    if isinstance(content, list):
+        return "".join(str(content))
+
+    return content
+
+
+def _config(thread_id: str) -> RunnableConfig:
+    return RunnableConfig(
+        {
+            "configurable": {
+                "thread_id": thread_id,
+            },
+        },
+    )
+
+
 def test_model_without_memory() -> None:
     """Test model's without any memory."""
-    response_1: BaseMessage = chat.invoke(
-        [HumanMessage("Hi, I'm Bob")],
-    )
+    response_1: BaseMessage = chat.invoke([HumanMessage("Hi, I'm Bob")])
 
     assert response_1.content == (
         "Hello Bob! It's nice to meet you. "
         "Is there something I can help you with or would you like to chat?"
     )
 
-    response_2: BaseMessage = chat.invoke(
-        [HumanMessage("What's my name?")],
-    )
+    response_2: BaseMessage = chat.invoke([_what_is_my_name()])
 
     assert response_2.content == (
         "I don't have any information about your identity, "
@@ -51,7 +70,7 @@ def test_model_with_manual_memory() -> None:
         [
             HumanMessage("Hi, I'm Bob"),
             AIMessage("Hello Bob! How can I assist you today?"),
-            HumanMessage("What's my name?"),
+            _what_is_my_name(),
         ],
     )
 
@@ -64,23 +83,11 @@ def test_model_with_manual_memory() -> None:
 
 def test_app_memory() -> None:
     """Test app's memory."""
-    config_1: RunnableConfig = RunnableConfig(
-        {
-            "configurable": {"thread_id": "abc123"},
-        },
-    )
-
-    config_2: RunnableConfig = RunnableConfig(
-        {
-            "configurable": {"thread_id": "abc234"},
-        },
-    )
-
     response_1: dict[str, Any] | Any = app.invoke(
         {
             "messages": [HumanMessage("Hi! I'm Bob.")],
         },
-        config_1,
+        _config("abc123"),
     )
 
     assert response_1["messages"][-1].content == (
@@ -90,9 +97,9 @@ def test_app_memory() -> None:
 
     response_2: dict[str, Any] | Any = app.invoke(
         {
-            "messages": [HumanMessage("What's my name?")],
+            "messages": [_what_is_my_name()],
         },
-        config_1,
+        _config("abc123"),
     )
 
     assert response_2["messages"][-1].content == (
@@ -101,9 +108,9 @@ def test_app_memory() -> None:
 
     response_3: dict[str, Any] | Any = app.invoke(
         {
-            "messages": [HumanMessage("What's my name?")],
+            "messages": [_what_is_my_name()],
         },
-        config_2,
+        _config("abc234"),
     )
 
     assert response_3["messages"][-1].content == (
@@ -116,9 +123,9 @@ def test_app_memory() -> None:
 
     response_4: dict[str, Any] | Any = app.invoke(
         {
-            "messages": [HumanMessage("What's my name?")],
+            "messages": [_what_is_my_name()],
         },
-        config_1,
+        _config("abc123"),
     )
 
     assert response_4["messages"][-1].content == (
@@ -131,23 +138,11 @@ def test_app_memory() -> None:
 @pytest.mark.asyncio
 async def test_app_memory_async() -> None:
     """Test app's memory async."""
-    config_1: RunnableConfig = RunnableConfig(
-        {
-            "configurable": {"thread_id": "abc111"},
-        },
-    )
-
-    config_2: RunnableConfig = RunnableConfig(
-        {
-            "configurable": {"thread_id": "abc222"},
-        },
-    )
-
     response_1: dict[str, Any] | Any = await app.ainvoke(
         {
             "messages": [HumanMessage("Hi! I'm Bob.")],
         },
-        config_1,
+        _config("abc111"),
     )
 
     assert response_1["messages"][-1].content == (
@@ -157,9 +152,9 @@ async def test_app_memory_async() -> None:
 
     response_2: dict[str, Any] | Any = await app.ainvoke(
         {
-            "messages": [HumanMessage("What's my name?")],
+            "messages": [_what_is_my_name()],
         },
-        config_1,
+        _config("abc111"),
     )
 
     assert response_2["messages"][-1].content == (
@@ -168,9 +163,9 @@ async def test_app_memory_async() -> None:
 
     response_3: dict[str, Any] | Any = await app.ainvoke(
         {
-            "messages": [HumanMessage("What's my name?")],
+            "messages": [_what_is_my_name()],
         },
-        config_2,
+        _config("abc222"),
     )
 
     assert response_3["messages"][-1].content == (
@@ -183,9 +178,9 @@ async def test_app_memory_async() -> None:
 
     response_4: dict[str, Any] | Any = await app.ainvoke(
         {
-            "messages": [HumanMessage("What's my name?")],
+            "messages": [_what_is_my_name()],
         },
-        config_1,
+        _config("abc111"),
     )
 
     assert response_4["messages"][-1].content == (
@@ -197,17 +192,11 @@ async def test_app_memory_async() -> None:
 
 def test_pirate_app() -> None:
     """Test pirate app."""
-    config_1: RunnableConfig = RunnableConfig(
-        {
-            "configurable": {"thread_id": "abc345"},
-        },
-    )
-
     response_1: dict[str, Any] | Any = pirate_app.invoke(
         {
             "messages": [HumanMessage("Hi! I'm Jim.")],
         },
-        config_1,
+        _config("abc345"),
     )
 
     assert response_1["messages"][-1].content == (
@@ -222,7 +211,7 @@ def test_pirate_app() -> None:
         {
             "messages": [HumanMessage("What's my name")],
         },
-        config_1,
+        _config("abc345"),
     )
 
     assert response_2["messages"][-1].content == (
@@ -236,12 +225,6 @@ def test_pirate_app() -> None:
 
 def test_polyglot_app() -> None:
     """Test polyglot app."""
-    config: RunnableConfig = RunnableConfig(
-        {
-            "configurable": {"thread_id": "abc456"},
-        },
-    )
-
     language: str = "Spanish"
 
     response_1: dict[str, Any] | Any = polyglot_app.invoke(
@@ -249,7 +232,7 @@ def test_polyglot_app() -> None:
             "messages": [HumanMessage("Hi! I'm Bob.")],
             "language": language,
         },
-        config,
+        _config("abc456"),
     )
 
     assert response_1["messages"][-1].content == (
@@ -260,7 +243,7 @@ def test_polyglot_app() -> None:
         {
             "messages": [HumanMessage("What is my name?")],
         },
-        config,
+        _config("abc456"),
     )
 
     assert response_2["messages"][-1].content == (
@@ -270,20 +253,14 @@ def test_polyglot_app() -> None:
 
 def test_trimmed_app_1() -> None:
     """Test trimmed app."""
-    config: RunnableConfig = RunnableConfig(
-        {
-            "configurable": {"thread_id": "abc567"},
-        },
-    )
-
     language: str = "English"
 
     response: dict[str, Any] | Any = trimmed_app.invoke(
         {
-            "messages": [*messages_to_trim, HumanMessage("What's my name?")],
+            "messages": [*messages_to_trim, _what_is_my_name()],
             "language": language,
         },
-        config,
+        _config("abc567"),
     )
 
     assert response["messages"][-1].content == (
@@ -295,12 +272,6 @@ def test_trimmed_app_1() -> None:
 
 def test_trimmed_app_2() -> None:
     """Test trimmed app."""
-    config: RunnableConfig = RunnableConfig(
-        {
-            "configurable": {"thread_id": "abc678"},
-        },
-    )
-
     language: str = "English"
 
     response: dict[str, Any] | Any = trimmed_app.invoke(
@@ -311,7 +282,7 @@ def test_trimmed_app_2() -> None:
             ],
             "language": language,
         },
-        config,
+        _config("abc678"),
     )
 
     assert response["messages"][-1].content == (
@@ -321,10 +292,6 @@ def test_trimmed_app_2() -> None:
 
 def test_app_stream() -> None:
     """Test app's stream."""
-    config: RunnableConfig = RunnableConfig(
-        {"configurable": {"thread_id": "abc789"}},
-    )
-
     memory: list[str] = []
 
     for chunk, _ in trimmed_app.stream(
@@ -332,11 +299,11 @@ def test_app_stream() -> None:
             "messages": [HumanMessage("Hi I'm Todd, please tell me a joke.")],
             "language": "English",
         },
-        config,
+        _config("abc789"),
         stream_mode="messages",
     ):
         if isinstance(chunk, AIMessage):
-            memory.append(chunk.content)
+            memory.append(_chunk_to_string(chunk))
             memory.append("|")
 
     assert "".join(memory) == (

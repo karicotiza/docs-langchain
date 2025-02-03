@@ -4,7 +4,7 @@ Build a chatbot.
 """
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Annotated, Any, TypedDict
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypedDict
 
 from langchain_core.messages import (
     AIMessage,
@@ -14,6 +14,7 @@ from langchain_core.messages import (
     trim_messages,
 )
 from langchain_core.prompts import (
+    BasePromptTemplate,
     ChatPromptTemplate,
     MessagesPlaceholder,
     SystemMessagePromptTemplate,
@@ -35,6 +36,9 @@ chat: ChatOllama = ChatOllama(
     temperature=llm_model_temperature,
 )
 
+model_literal: Literal["model"] = "model"
+messages_literal: Literal["messages"] = "messages"
+
 workflow: StateGraph = StateGraph(state_schema=MessagesState)
 
 
@@ -48,12 +52,12 @@ def call_model(state: MessagesState) -> dict[str, BaseMessage]:
         dict[str, BaseMessage]: model response.
 
     """
-    response: BaseMessage = chat.invoke(state["messages"])
-    return {"messages": response}
+    response: BaseMessage = chat.invoke(state[messages_literal])
+    return {messages_literal: response}
 
 
-workflow.add_edge(START, "model")
-workflow.add_node("model", call_model)
+workflow.add_edge(START, model_literal)
+workflow.add_node(model_literal, call_model)
 
 memory: MemorySaver = MemorySaver()
 app: CompiledStateGraph = workflow.compile(checkpointer=memory)
@@ -67,14 +71,14 @@ pirate_system_prompt: SystemMessage = SystemMessage(
 prompt_template: ChatPromptTemplate = ChatPromptTemplate.from_messages(
     [
         pirate_system_prompt,
-        MessagesPlaceholder(variable_name="messages"),
+        MessagesPlaceholder(variable_name=messages_literal),
     ],
 )
 
 pirate_workflow: StateGraph = StateGraph(state_schema=MessagesState)
 
 
-def pirate_call_model(state: MessagesState) -> dict[str, BaseMessage]:
+def pirate_call_model(state: dict[Any, Any]) -> dict[str, BaseMessage]:
     """Call pirate model.
 
     Args:
@@ -86,11 +90,11 @@ def pirate_call_model(state: MessagesState) -> dict[str, BaseMessage]:
     """
     prompt: PromptValue = prompt_template.invoke(state)
     response: BaseMessage = chat.invoke(prompt)
-    return {"messages": response}
+    return {messages_literal: response}
 
 
-pirate_workflow.add_edge(START, "model")
-pirate_workflow.add_node("model", pirate_call_model)
+pirate_workflow.add_edge(START, model_literal)
+pirate_workflow.add_node(model_literal, pirate_call_model)
 
 pirate_memory: MemorySaver = MemorySaver()
 pirate_app: CompiledStateGraph = pirate_workflow.compile(
@@ -104,11 +108,11 @@ polyglot_system_message_prompt_template: SystemMessagePromptTemplate = (
     )
 )
 
-polyglot_prompt_template: ChatPromptTemplate = (
+polyglot_prompt_template: BasePromptTemplate = (
     ChatPromptTemplate.from_messages(
         [
             polyglot_system_message_prompt_template,
-            MessagesPlaceholder(variable_name="messages"),
+            MessagesPlaceholder(variable_name=messages_literal),
         ],
     )
 )
@@ -124,7 +128,7 @@ class PolyglotState(TypedDict):
 polyglot_workflow: StateGraph = StateGraph(state_schema=PolyglotState)
 
 
-def polyglot_call_model(state: PolyglotState) -> dict[str, BaseMessage]:
+def polyglot_call_model(state: dict[Any, Any]) -> dict[str, BaseMessage]:
     """Call polyglot model.
 
     Args:
@@ -136,11 +140,11 @@ def polyglot_call_model(state: PolyglotState) -> dict[str, BaseMessage]:
     """
     prompt: PromptValue = polyglot_prompt_template.invoke(state)
     response: BaseMessage = chat.invoke(prompt)
-    return {"messages": response}
+    return {messages_literal: response}
 
 
-polyglot_workflow.add_edge(START, "model")
-polyglot_workflow.add_node("model", polyglot_call_model)
+polyglot_workflow.add_edge(START, model_literal)
+polyglot_workflow.add_node(model_literal, polyglot_call_model)
 
 polyglot_memory: MemorySaver = MemorySaver()
 polyglot_app: CompiledStateGraph = polyglot_workflow.compile(
@@ -186,20 +190,20 @@ def trimmed_call_model(state: PolyglotState) -> dict[str, BaseMessage]:
         dict[str, BaseMessage]: model response.
 
     """
-    trimmed_messages: Any = trimmer.invoke(state["messages"])
+    trimmed_messages: Any = trimmer.invoke(state[messages_literal])
     prompt: PromptValue = polyglot_prompt_template.invoke(
         {
-            "messages": trimmed_messages,
+            messages_literal: trimmed_messages,
             "language": state["language"],
         },
     )
 
     response: BaseMessage = chat.invoke(prompt)
-    return {"messages": response}
+    return {messages_literal: response}
 
 
-trimmed_workflow.add_edge(START, "model")
-trimmed_workflow.add_node("model", trimmed_call_model)
+trimmed_workflow.add_edge(START, model_literal)
+trimmed_workflow.add_node(model_literal, trimmed_call_model)
 
 trimmed_memory: MemorySaver = MemorySaver()
 trimmed_app: CompiledStateGraph = trimmed_workflow.compile(

@@ -3,7 +3,7 @@
 Classify text into labels.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from src.tutorials.classify_text_into_labels import (
     AggressivenessChoice,
@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from langchain_core.prompt_values import PromptValue
 
 
+input_literal: Literal["input"] = "input"
+
+
 def test_structured_output() -> None:
     """Test runnable's with structured output method."""
     inp: str = (
@@ -26,7 +29,7 @@ def test_structured_output() -> None:
         "Creo que seremos muy buenos amigos!"
     )
 
-    prompt: PromptValue = tagging_prompt.invoke({"input": inp})
+    prompt: PromptValue = tagging_prompt.invoke({input_literal: inp})
     response: Any = llm.invoke(prompt)
 
     assert response.sentiment == "positive"
@@ -37,7 +40,7 @@ def test_structured_output() -> None:
 def test_dictionary_output() -> None:
     """Test response's dict method."""
     inp: str = "Estoy muy enojado con vos! Te voy a dar tu merecido!"
-    prompt: PromptValue = tagging_prompt.invoke({"input": inp})
+    prompt: PromptValue = tagging_prompt.invoke({input_literal: inp})
     response: Any = llm.invoke(prompt)
 
     assert response.model_dump() == {
@@ -56,7 +59,7 @@ def test_finer_structured_output_1() -> None:
         "Creo que seremos muy buenos amigos!"
     )
 
-    prompt: PromptValue = finer_tagging_prompt.invoke({"input": inp})
+    prompt: PromptValue = finer_tagging_prompt.invoke({input_literal: inp})
     response: Any = finer_llm.invoke(prompt)
 
     assert response.sentiment == SentimentChoice.happy
@@ -68,7 +71,7 @@ def test_finer_structured_output_2() -> None:
     """Test runnable's with structured output method with finer model."""
     inp: str = "Estoy muy enojado con vos! Te voy a dar tu merecido!"
 
-    prompt: PromptValue = finer_tagging_prompt.invoke({"input": inp})
+    prompt: PromptValue = finer_tagging_prompt.invoke({input_literal: inp})
     response: Any = finer_llm.invoke(prompt)
 
     assert response.sentiment == SentimentChoice.sad
@@ -83,7 +86,7 @@ def test_finer_structured_output_3() -> None:
         "Weather is ok here, I can go outside without much more than a coat"
     )
 
-    prompt: PromptValue = finer_tagging_prompt.invoke({"input": inp})
+    prompt: PromptValue = finer_tagging_prompt.invoke({input_literal: inp})
     response: Any = finer_llm.invoke(prompt)
 
     assert response.sentiment == SentimentChoice.neutral

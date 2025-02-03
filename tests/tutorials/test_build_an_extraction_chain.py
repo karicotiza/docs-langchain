@@ -55,6 +55,7 @@ def test_reference_examples() -> None:
 
     assert response.content == "6"
 
+
 def test_tool_messages() -> None:
     """Test tool messages."""
     assert tool_messages[3].content == "Detected no people."

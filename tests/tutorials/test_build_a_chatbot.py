@@ -2,6 +2,7 @@
 
 Build a chatbot.
 """
+from __future__ import annotations
 
 from typing import Any
 
@@ -34,6 +35,20 @@ def _chunk_to_string(chunk: AIMessage) -> str:
     return content
 
 
+def _input(
+    messages: list[BaseMessage],
+    language: str | None = None,
+) -> dict[str, Any]:
+    mapping: dict[str, Any] = {
+        "messages": messages,
+    }
+
+    if language:
+        mapping["language"] = language
+
+    return mapping
+
+
 def _config(thread_id: str) -> RunnableConfig:
     return RunnableConfig(
         {
@@ -42,6 +57,10 @@ def _config(thread_id: str) -> RunnableConfig:
             },
         },
     )
+
+
+def _answer(response: dict[str, Any] | Any) -> str:  # noqa: ANN401
+    return response["messages"][-1].content
 
 
 def test_model_without_memory() -> None:
@@ -84,36 +103,30 @@ def test_model_with_manual_memory() -> None:
 def test_app_memory() -> None:
     """Test app's memory."""
     response_1: dict[str, Any] | Any = app.invoke(
-        {
-            "messages": [HumanMessage("Hi! I'm Bob.")],
-        },
+        _input([HumanMessage("Hi! I'm Bob.")]),
         _config("abc123"),
     )
 
-    assert response_1["messages"][-1].content == (
+    assert _answer(response_1) == (
         "Hello Bob! It's nice to meet you. "
         "Is there something I can help you with, or would you like to chat?"
     )
 
     response_2: dict[str, Any] | Any = app.invoke(
-        {
-            "messages": [_what_is_my_name()],
-        },
+        _input([_what_is_my_name()]),
         _config("abc123"),
     )
 
-    assert response_2["messages"][-1].content == (
+    assert _answer(response_2) == (
         "Your name is Bob. You told me that earlier."
     )
 
     response_3: dict[str, Any] | Any = app.invoke(
-        {
-            "messages": [_what_is_my_name()],
-        },
+        _input([_what_is_my_name()]),
         _config("abc234"),
     )
 
-    assert response_3["messages"][-1].content == (
+    assert _answer(response_3) == (
         "I don't have any information about your identity, "
         "so I'm not aware of your name. We just started our conversation, "
         "and I don't retain any data about individual users. "
@@ -122,13 +135,11 @@ def test_app_memory() -> None:
     )
 
     response_4: dict[str, Any] | Any = app.invoke(
-        {
-            "messages": [_what_is_my_name()],
-        },
+        _input([_what_is_my_name()]),
         _config("abc123"),
     )
 
-    assert response_4["messages"][-1].content == (
+    assert _answer(response_4) == (
         """You didn't tell me your last name, just "Bob". """
         "I don't have any additional information about you beyond that. "
         "Would you like to share it with me?"
@@ -139,36 +150,30 @@ def test_app_memory() -> None:
 async def test_app_memory_async() -> None:
     """Test app's memory async."""
     response_1: dict[str, Any] | Any = await app.ainvoke(
-        {
-            "messages": [HumanMessage("Hi! I'm Bob.")],
-        },
+        _input([HumanMessage("Hi! I'm Bob.")]),
         _config("abc111"),
     )
 
-    assert response_1["messages"][-1].content == (
+    assert _answer(response_1) == (
         "Hello Bob! It's nice to meet you. "
         "Is there something I can help you with, or would you like to chat?"
     )
 
     response_2: dict[str, Any] | Any = await app.ainvoke(
-        {
-            "messages": [_what_is_my_name()],
-        },
+        _input([_what_is_my_name()]),
         _config("abc111"),
     )
 
-    assert response_2["messages"][-1].content == (
+    assert _answer(response_2) == (
         "Your name is Bob. You told me that earlier."
     )
 
     response_3: dict[str, Any] | Any = await app.ainvoke(
-        {
-            "messages": [_what_is_my_name()],
-        },
+        _input([_what_is_my_name()]),
         _config("abc222"),
     )
 
-    assert response_3["messages"][-1].content == (
+    assert _answer(response_3) == (
         "I don't have any information about your identity, "
         "so I'm not aware of your name. We just started our conversation, "
         "and I don't retain any data about individual users. "
@@ -177,13 +182,11 @@ async def test_app_memory_async() -> None:
     )
 
     response_4: dict[str, Any] | Any = await app.ainvoke(
-        {
-            "messages": [_what_is_my_name()],
-        },
+        _input([_what_is_my_name()]),
         _config("abc111"),
     )
 
-    assert response_4["messages"][-1].content == (
+    assert _answer(response_4) == (
         """You didn't tell me your last name, just "Bob". """
         "I don't have any additional information about you beyond that. "
         "Would you like to share it with me?"
@@ -192,14 +195,14 @@ async def test_app_memory_async() -> None:
 
 def test_pirate_app() -> None:
     """Test pirate app."""
+    message_1: str = "Hi! I'm Jim."
+
     response_1: dict[str, Any] | Any = pirate_app.invoke(
-        {
-            "messages": [HumanMessage("Hi! I'm Jim.")],
-        },
+        _input([HumanMessage(message_1)]),
         _config("abc345"),
     )
 
-    assert response_1["messages"][-1].content == (
+    assert _answer(response_1) == (
         "Yer lookin' fer a chat, eh? Well, matey Jim, welcome aboard! "
         "I be happy to have ye as me guest. "
         "What be bringin' ye to these fair waters today? "
@@ -208,62 +211,52 @@ def test_pirate_app() -> None:
     )
 
     response_2: dict[str, Any] | Any = pirate_app.invoke(
-        {
-            "messages": [HumanMessage("What's my name")],
-        },
+        _input([_what_is_my_name()]),
         _config("abc345"),
     )
 
-    assert response_2["messages"][-1].content == (
+    assert _answer(response_2) == (
         "Arrr, ye be askin' about yer own name, eh? Yer name be Jim, matey! "
-        "Don't ye remember? I told ye that already, but I suppose ye were too "
-        "busy swabbin' the decks to pay attention. "
-        "Now, let's get back to more important things... "
-        "like findin' the hidden treasure or avoidin' the Royal Navy!"
+        "I remember now. "
+        "Ye told me that when we set sail fer this here conversation. "
+        "So, Jim, what be on yer mind? "
+        "Want to talk about the seven seas or maybe find treasure?"
     )
 
 
 def test_polyglot_app() -> None:
     """Test polyglot app."""
+    message_1: str = "Hi! I'm Bob."
+    message_2: str = "What is my name?"
     language: str = "Spanish"
 
     response_1: dict[str, Any] | Any = polyglot_app.invoke(
-        {
-            "messages": [HumanMessage("Hi! I'm Bob.")],
-            "language": language,
-        },
+        _input([HumanMessage(message_1)], language),
         _config("abc456"),
     )
 
-    assert response_1["messages"][-1].content == (
+    assert _answer(response_1) == (
         "Hola Bob, ¿cómo estás? (Hello Bob, how are you?)"
     )
 
     response_2: dict[str, Any] | Any = polyglot_app.invoke(
-        {
-            "messages": [HumanMessage("What is my name?")],
-        },
+        _input([HumanMessage(message_2)], language),
         _config("abc456"),
     )
 
-    assert response_2["messages"][-1].content == (
+    assert _answer(response_2) == (
         "Tu nombre es Bob. (Your name is Bob.)"
     )
 
 
 def test_trimmed_app_1() -> None:
     """Test trimmed app."""
-    language: str = "English"
-
     response: dict[str, Any] | Any = trimmed_app.invoke(
-        {
-            "messages": [*messages_to_trim, _what_is_my_name()],
-            "language": language,
-        },
+        _input([*messages_to_trim, _what_is_my_name()], "English"),
         _config("abc567"),
     )
 
-    assert response["messages"][-1].content == (
+    assert _answer(response) == (
         "I don't know your name. We just started our conversation, "
         "and I don't have any information about you. "
         "Would you like to tell me your name?"
@@ -272,33 +265,23 @@ def test_trimmed_app_1() -> None:
 
 def test_trimmed_app_2() -> None:
     """Test trimmed app."""
-    language: str = "English"
+    message: str = "What math problem did I ask?"
 
     response: dict[str, Any] | Any = trimmed_app.invoke(
-        {
-            "messages": [
-                *messages_to_trim,
-                HumanMessage("What math problem did I ask?"),
-            ],
-            "language": language,
-        },
+        _input([*messages_to_trim, HumanMessage(message)], "English"),
         _config("abc678"),
     )
 
-    assert response["messages"][-1].content == (
-        'You asked me "whats 2 + 2".'
-    )
+    assert _answer(response) == 'You asked me "whats 2 + 2".'
 
 
 def test_app_stream() -> None:
     """Test app's stream."""
+    message: str = "Hi I'm Todd, please tell me a joke."
     memory: list[str] = []
 
     for chunk, _ in trimmed_app.stream(
-        {
-            "messages": [HumanMessage("Hi I'm Todd, please tell me a joke.")],
-            "language": "English",
-        },
+        _input([HumanMessage(message)], "English"),
         _config("abc789"),
         stream_mode="messages",
     ):

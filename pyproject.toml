@@ -22,9 +22,8 @@ line-length = 80
 # "WPS202" Too many module members.
 # "WPS210" Too many local variables.
 # "WPS218" Too many assert statements.
-# "WPS226" String over-use.
 per-file-ignores = """
-    tests/**/*.py: WPS110, WPS114, WPS202, WPS210, WPS218, WPS226
+    tests/**/*.py: WPS110, WPS114, WPS202, WPS210, WPS218
 """
 
 [tool.pytest.ini_options]

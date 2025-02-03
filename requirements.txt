@@ -16,6 +16,9 @@ langgraph==0.2.69
 # PDF loader
 pypdf==5.1.0
 
+# Used by message trimmer
+transformers==4.48.2
+
 # Linter
 ruff==0.8.5
 wemake-python-styleguide==1.0.0

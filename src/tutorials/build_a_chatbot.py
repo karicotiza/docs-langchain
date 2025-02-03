@@ -4,9 +4,15 @@ Build a chatbot.
 """
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Annotated, TypedDict
+from typing import TYPE_CHECKING, Annotated, Any, TypedDict
 
-from langchain_core.messages import BaseMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    trim_messages,
+)
 from langchain_core.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
@@ -139,4 +145,63 @@ polyglot_workflow.add_node("model", polyglot_call_model)
 polyglot_memory: MemorySaver = MemorySaver()
 polyglot_app: CompiledStateGraph = polyglot_workflow.compile(
     checkpointer=polyglot_memory,
+)
+
+max_tokens: int = 60
+
+trimmer: Any = trim_messages(
+    max_tokens=max_tokens,
+    strategy="last",
+    token_counter=chat,
+    include_system=True,
+    allow_partial=False,
+    start_on="human",
+)
+
+messages_to_trim: list[BaseMessage] = [
+    SystemMessage(content="you're a good assistant"),
+    HumanMessage(content="hi! I'm bob"),
+    AIMessage(content="hi!"),
+    HumanMessage(content="I like vanilla ice cream"),
+    AIMessage(content="nice"),
+    HumanMessage(content="whats 2 + 2"),
+    AIMessage(content="4"),
+    HumanMessage(content="thanks"),
+    AIMessage(content="no problem!"),
+    HumanMessage(content="having fun?"),
+    AIMessage(content="yes!"),
+]
+
+
+trimmed_workflow: StateGraph = StateGraph(state_schema=PolyglotState)
+
+
+def trimmed_call_model(state: PolyglotState) -> dict[str, BaseMessage]:
+    """Call trimmed model.
+
+    Args:
+        state (PolyglotState): trimmed workflow state.
+
+    Returns:
+        dict[str, BaseMessage]: model response.
+
+    """
+    trimmed_messages: Any = trimmer.invoke(state["messages"])
+    prompt: PromptValue = polyglot_prompt_template.invoke(
+        {
+            "messages": trimmed_messages,
+            "language": state["language"],
+        },
+    )
+
+    response: BaseMessage = chat.invoke(prompt)
+    return {"messages": response}
+
+
+trimmed_workflow.add_edge(START, "model")
+trimmed_workflow.add_node("model", trimmed_call_model)
+
+trimmed_memory: MemorySaver = MemorySaver()
+trimmed_app: CompiledStateGraph = trimmed_workflow.compile(
+    checkpointer=trimmed_memory,
 )

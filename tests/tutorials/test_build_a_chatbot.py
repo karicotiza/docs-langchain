@@ -9,7 +9,14 @@ import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from src.tutorials.build_a_chatbot import app, chat, pirate_app, polyglot_app
+from src.tutorials.build_a_chatbot import (
+    app,
+    chat,
+    messages_to_trim,
+    pirate_app,
+    polyglot_app,
+    trimmed_app,
+)
 
 pytest_plugins: tuple[str, ...] = ("pytest_asyncio",)
 
@@ -258,4 +265,55 @@ def test_polyglot_app() -> None:
 
     assert response_2["messages"][-1].content == (
         "Tu nombre es Bob. (Your name is Bob.)"
+    )
+
+
+def test_trimmed_app_1() -> None:
+    """Test trimmed app."""
+    config: RunnableConfig = RunnableConfig(
+        {
+            "configurable": {"thread_id": "abc567"},
+        },
+    )
+
+    language: str = "English"
+
+    response: dict[str, Any] | Any = trimmed_app.invoke(
+        {
+            "messages": [*messages_to_trim, HumanMessage("What's my name?")],
+            "language": language,
+        },
+        config,
+    )
+
+    assert response["messages"][-1].content == (
+        "I don't know your name. We just started our conversation, "
+        "and I don't have any information about you. "
+        "Would you like to tell me your name?"
+    )
+
+
+def test_trimmed_app_2() -> None:
+    """Test trimmed app."""
+    config: RunnableConfig = RunnableConfig(
+        {
+            "configurable": {"thread_id": "abc678"},
+        },
+    )
+
+    language: str = "English"
+
+    response: dict[str, Any] | Any = trimmed_app.invoke(
+        {
+            "messages": [
+                *messages_to_trim,
+                HumanMessage("What math problem did I ask?"),
+            ],
+            "language": language,
+        },
+        config,
+    )
+
+    assert response["messages"][-1].content == (
+        'You asked me "whats 2 + 2".'
     )

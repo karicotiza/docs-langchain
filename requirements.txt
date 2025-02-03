@@ -19,6 +19,9 @@ pypdf==5.1.0
 # Used by message trimmer
 transformers==4.48.2
 
+# Used as a search tool
+duckduckgo-search==7.3.0
+
 # Linter
 ruff==0.8.5
 wemake-python-styleguide==1.0.0

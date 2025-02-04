@@ -46,35 +46,35 @@ vector_store: Milvus = Milvus(
 )
 
 # Remove all data in milvus
-# with suppress(AttributeError):
-#     vector_store.delete(expr="pk > 0")
+with suppress(AttributeError):
+    vector_store.delete(expr="pk > 0")
 
-# url: str = "https://lilianweng.github.io/posts/2023-06-23-agent/"
-# loader: WebBaseLoader = WebBaseLoader(
-#     web_path=url,
-#     bs_kwargs={
-#         "parse_only": SoupStrainer(
-#             class_=("post-content", "post-title", "post-header"),
-#         ),
-#     },
-# )
+url: str = "https://lilianweng.github.io/posts/2023-06-23-agent/"
+loader: WebBaseLoader = WebBaseLoader(
+    web_path=url,
+    bs_kwargs={
+        "parse_only": SoupStrainer(
+            class_=("post-content", "post-title", "post-header"),
+        ),
+    },
+)
 
-# docs: list[Document] = loader.load()
+docs: list[Document] = loader.load()
 
-# chunk_size: int = 1000
-# chuck_overlap: int = 200
-# text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
-#     chunk_size=chunk_size,
-#     chunk_overlap=chuck_overlap,
-# )
+chunk_size: int = 1000
+chuck_overlap: int = 200
+text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
+    chunk_size=chunk_size,
+    chunk_overlap=chuck_overlap,
+)
 
-# all_splits: list[Document] = text_splitter.split_documents(docs)
+all_splits: list[Document] = text_splitter.split_documents(docs)
 
-# for doc in all_splits:
-#     doc.metadata["page"] = 0
-#     doc.metadata["start_index"] = 0
+for doc in all_splits:
+    doc.metadata["page"] = 0
+    doc.metadata["start_index"] = 0
 
-# ids: list[str] = vector_store.add_documents(all_splits)
+ids: list[str] = vector_store.add_documents(all_splits)
 
 prompt_url: str = "rlm/rag-prompt"
 prompt: Any = hub.pull(prompt_url)

@@ -4,14 +4,16 @@ services:
   ollama-llama3.2-3b:
     container_name: ms-ollama-llama3.2-3b
     image: ollama/ollama:0.5.4
-    restart: always
     ports:
       - 11434:11434
     volumes:
       - ../build/:/build/:ro
-    post_start:
-      - command: bash /build/download_llama_model.sh
-        user: root
+    healthcheck:
+      test: [ "CMD", "/build/start_llama_model.sh" ]
+      interval: 3h
+      timeout: 600s
+      retries: 5
+      start_period: 5s
     deploy:
       resources:
         reservations:
@@ -23,14 +25,16 @@ services:
   ollama-bge-m3:
     container_name: ms-ollama-bge-m3
     image: ollama/ollama:0.5.4
-    restart: always
     ports:
       - 11435:11434
     volumes:
       - ../build/:/build/:ro
-    post_start:
-      - command: bash /build/download_bge_model.sh
-        user: root
+    healthcheck:
+      test: [ "CMD", "/build/start_bge_model.sh" ]
+      interval: 3h
+      timeout: 600s
+      retries: 5
+      start_period: 5s
     deploy:
       resources:
         reservations:

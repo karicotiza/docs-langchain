@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 apt update -y
 apt install curl -y
 ollama pull bge-m3

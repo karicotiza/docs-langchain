@@ -23,7 +23,7 @@ line-length = 80
 # "WPS210" Too many local variables.
 # "WPS218" Too many assert statements.
 per-file-ignores = """
-    tests/**/*.py: WPS110, WPS114, WPS202, WPS210, WPS218
+    tests/**/*.py: WPS110, WPS114, WPS202, WPS210, WPS218, WPS432
 """
 
 [tool.pytest.ini_options]

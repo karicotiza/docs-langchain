@@ -16,6 +16,6 @@ Steps:
 `python -m pip install -r requirements.txt`
 2. Create `.env` file accordingly to `.env.example` to set up LangSmith.
 3. Spin up the required infrastructure using Docker -
-`docker compose -f ./build/prod.yml up --build --detach` 
+`docker compose -f ./build/prod.yml up --build --detach`
 4. Run tests -
 `python -m pytest`

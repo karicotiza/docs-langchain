@@ -66,13 +66,13 @@ chuck_overlap: int = 200
 text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
     chunk_size=chunk_size,
     chunk_overlap=chuck_overlap,
+    add_start_index=True,
 )
 
 all_splits: list[Document] = text_splitter.split_documents(docs)
 
 for doc in all_splits:
     doc.metadata["page"] = 0
-    doc.metadata["start_index"] = 0
 
 ids: list[str] = vector_store.add_documents(all_splits)
 

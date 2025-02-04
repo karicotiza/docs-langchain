@@ -14,9 +14,7 @@ Steps:
 
 1. Install dependencies -
 `python -m pip install -r requirements.txt`
-
 2. Spin up the required infrastructure using Docker -
 `docker compose -f .\build\prod.yml up --build --detach`
-
 3. Run tests -
 `python -m pytest`

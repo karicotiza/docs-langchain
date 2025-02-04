@@ -10,7 +10,7 @@ import pytest
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from src.tutorials.build_a_chatbot import (
+from src.tutorials.orchestration.build_a_chatbot import (
     app,
     chat,
     messages_to_trim,

@@ -5,7 +5,7 @@ Build an extraction chain.
 
 from typing import TYPE_CHECKING, Any
 
-from src.tutorials.build_an_extraction_chain import (
+from src.tutorials.get_started.build_an_extraction_chain import (
     chat,
     message_no_extraction,
     messages,

@@ -3,6 +3,8 @@
 Build a semantic search engine module.
 """
 
+import contextlib
+
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_milvus import Milvus
@@ -47,6 +49,7 @@ vector_store: Milvus = Milvus(
 )
 
 # Remove all data in milvus
-vector_store.delete(expr="pk > 0")
+with contextlib.suppress(AttributeError):
+    vector_store.delete(expr="pk > 0")
 
 ids: list[str] = vector_store.add_documents(all_splits)

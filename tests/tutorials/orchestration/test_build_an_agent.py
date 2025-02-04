@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 
-from src.tutorials.build_an_agent import (
+from src.tutorials.orchestration.build_an_agent import (
     chat,
     search,
     stateful_agent_executor,

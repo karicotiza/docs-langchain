@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from src.tutorials.build_a_semantic_search_engine import (
+from src.tutorials.get_started.build_a_semantic_search_engine import (
     all_splits,
     docs,
     embeddings,

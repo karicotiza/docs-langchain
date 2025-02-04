@@ -5,7 +5,7 @@ Classify text into labels.
 
 from typing import TYPE_CHECKING, Any, Literal
 
-from src.tutorials.classify_text_into_labels import (
+from src.tutorials.get_started.classify_text_into_labels import (
     AggressivenessChoice,
     LanguageChoice,
     SentimentChoice,

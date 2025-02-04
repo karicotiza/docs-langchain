@@ -6,7 +6,7 @@ Build a simple LLM application with chat models and prompt templates.
 
 from typing import TYPE_CHECKING
 
-from src.tutorials.build_a_simple_llm import (
+from src.tutorials.get_started.build_a_simple_llm import (
     chat,
     dict_messages,
     human_messages,

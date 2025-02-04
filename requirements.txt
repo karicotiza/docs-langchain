@@ -16,6 +16,9 @@ langgraph==0.2.69
 # PDF loader
 pypdf==5.1.0
 
+# Website loader
+beautifulsoup4==4.13.1
+
 # Used by message trimmer
 transformers==4.48.2
 

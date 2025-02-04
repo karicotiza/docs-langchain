@@ -70,7 +70,7 @@ def test_stateless_agent_1() -> None:
         },
     )
 
-    assert "news" in response["messages"][-1].content
+    assert "news" in response["messages"][-1].content.lower()
 
 
 def test_stateless_agent_2() -> None:
@@ -82,7 +82,7 @@ def test_stateless_agent_2() -> None:
         },
     )
 
-    assert "current weather" in response["messages"][-1].content
+    assert "current weather" in response["messages"][-1].content.lower()
 
 
 def test_stateless_agent_streaming_messages() -> None:

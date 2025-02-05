@@ -5,22 +5,20 @@ Build a Retrieval Augmented Generation (RAG) app: part 2.
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from bs4 import SoupStrainer
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_core.documents import Document  # noqa: TC002
 from langchain_core.messages import AnyMessage, BaseMessage, SystemMessage
-from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.runnables import Runnable
 from langchain_core.tools import tool
 from langchain_milvus import Milvus
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
-from langgraph.graph.state import CompiledStateGraph
 
 from src.settings import (
     embedding_model_name,
@@ -29,6 +27,10 @@ from src.settings import (
     llm_model_temperature,
     llm_model_url,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.runnables import Runnable
+    from langgraph.graph.state import CompiledStateGraph
 
 chat: ChatOllama = ChatOllama(
     base_url=llm_model_url,
@@ -47,35 +49,35 @@ vector_store: Milvus = Milvus(
 )
 
 # Remove all data in milvus
-# with suppress(AttributeError):
-#     vector_store.delete(expr="pk > 0")
+with suppress(AttributeError):
+    vector_store.delete(expr="pk > 0")
 
-# url: str = "https://lilianweng.github.io/posts/2023-06-23-agent/"
-# loader: WebBaseLoader = WebBaseLoader(
-#     web_path=url,
-#     bs_kwargs={
-#         "parse_only": SoupStrainer(
-#             class_=("post-content", "post-title", "post-header"),
-#         ),
-#     },
-# )
+url: str = "https://lilianweng.github.io/posts/2023-06-23-agent/"
+loader: WebBaseLoader = WebBaseLoader(
+    web_path=url,
+    bs_kwargs={
+        "parse_only": SoupStrainer(
+            class_=("post-content", "post-title", "post-header"),
+        ),
+    },
+)
 
-# docs: list[Document] = loader.load()
+docs: list[Document] = loader.load()
 
-# chunk_size: int = 1000
-# chuck_overlap: int = 200
-# text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
-#     chunk_size=chunk_size,
-#     chunk_overlap=chuck_overlap,
-#     add_start_index=True,
-# )
+chunk_size: int = 1000
+chuck_overlap: int = 200
+text_splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
+    chunk_size=chunk_size,
+    chunk_overlap=chuck_overlap,
+    add_start_index=True,
+)
 
-# all_splits: list[Document] = text_splitter.split_documents(docs)
+all_splits: list[Document] = text_splitter.split_documents(docs)
 
-# for doc in all_splits:
-#     doc.metadata["page"] = 0
+for doc in all_splits:
+    doc.metadata["page"] = 0
 
-# ids: list[str] = vector_store.add_documents(all_splits)
+ids: list[str] = vector_store.add_documents(all_splits)
 
 graph_builder: StateGraph = StateGraph(MessagesState)
 
@@ -196,3 +198,7 @@ graph_builder.add_edge("tools", "generate")
 graph_builder.add_edge("generate", END)
 
 graph: CompiledStateGraph = graph_builder.compile()
+
+memory: MemorySaver = MemorySaver()
+
+stateful_graph: CompiledStateGraph = graph_builder.compile(checkpointer=memory)

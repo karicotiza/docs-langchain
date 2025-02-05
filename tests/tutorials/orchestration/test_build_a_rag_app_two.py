@@ -5,7 +5,10 @@ Build a Retrieval Augmented Generation (RAG) app: part 2.
 
 from typing import Any
 
-from src.tutorials.orchestration.build_a_rag_app_two import graph
+from src.tutorials.orchestration.build_a_rag_app_two import (
+    graph,
+    stateful_graph,
+)
 
 
 def test_graph_1() -> None:
@@ -63,3 +66,46 @@ def test_graph_2() -> None:
     assert response["messages"][-1].content in [
         expected_output_1, expected_output_2,
     ]
+
+
+def test_stateful_graph() -> None:
+    """Test stateful graph."""
+    user_input_1: str = "What is Task Decomposition?"
+    user_input_2: str = "Can you look up some common ways of doing it?"
+
+    response_1: dict[str, Any] | Any = stateful_graph.invoke(
+        input={"messages": [{"role": "user", "content": user_input_1}]},
+        config={"configurable": {"thread_id": "abc123"}},
+    )
+
+    expected_output_1_1: str = (
+        "Task decomposition is the process of breaking down a complicated "
+        "task into smaller and simpler steps. "
+        "This technique helps an agent plan ahead by identifying individual "
+        "subgoals that can be achieved one at a time. "
+        "It transforms big tasks into multiple manageable tasks, "
+        "allowing for more efficient problem-solving."
+    )
+
+    expected_output_1_2: str = (
+        "Task decomposition is a technique used to break down complex "
+        "tasks into smaller and simpler steps. "
+        "This process helps an agent understand the task and plan ahead by "
+        "identifying subgoals and manageable steps. "
+        "It transforms big tasks into multiple manageable tasks, "
+        "allowing for more efficient computation and interpretation of "
+        "the model's thinking process."
+    )
+
+    expected_output_2_1: str = "Task decomposition can be done in three"
+
+    assert response_1["messages"][-1].content in [
+        expected_output_1_1, expected_output_1_2,
+    ]
+
+    response_2: dict[str, Any] | Any = stateful_graph.invoke(
+        input={"messages": [{"role": "user", "content": user_input_2}]},
+        config={"configurable": {"thread_id": "abc123"}},
+    )
+
+    assert expected_output_2_1 in response_2["messages"][-1].content

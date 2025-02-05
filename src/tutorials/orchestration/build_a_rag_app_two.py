@@ -18,7 +18,7 @@ from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, MessagesState, StateGraph
-from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.prebuilt import ToolNode, create_react_agent, tools_condition
 
 from src.settings import (
     embedding_model_name,
@@ -30,7 +30,7 @@ from src.settings import (
 
 if TYPE_CHECKING:
     from langchain_core.runnables import Runnable
-    from langgraph.graph.state import CompiledStateGraph
+    from langgraph.graph.state import CompiledGraph, CompiledStateGraph
 
 chat: ChatOllama = ChatOllama(
     base_url=llm_model_url,
@@ -202,3 +202,9 @@ graph: CompiledStateGraph = graph_builder.compile()
 memory: MemorySaver = MemorySaver()
 
 stateful_graph: CompiledStateGraph = graph_builder.compile(checkpointer=memory)
+
+agent: CompiledGraph = create_react_agent(
+    model=chat,
+    tools=[retrieve],
+    checkpointer=memory,
+)

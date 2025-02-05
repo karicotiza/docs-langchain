@@ -6,10 +6,10 @@ Build a Retrieval Augmented Generation (RAG) app: part 2.
 from typing import Any
 
 from src.tutorials.orchestration.build_a_rag_app_two import (
+    agent,
     graph,
     stateful_graph,
 )
-
 
 def test_graph_1() -> None:
     """Test graph 1."""
@@ -109,3 +109,20 @@ def test_stateful_graph() -> None:
     )
 
     assert expected_output_2_1 in response_2["messages"][-1].content
+
+
+def test_agent() -> None:
+    """Test agent."""
+    user_input: str = (
+        "What is the standard method for Task Decomposition?\n\n"
+        "Once you get the answer, look up common extensions of that method."
+    )
+
+    expected_output: str = "Common extensions of this method include" 
+
+    response: dict[str, Any] | Any = agent.invoke(
+        input={"messages": [{"role": "user", "content": user_input}]},
+        config={"configurable": {"thread_id": "def234"}},
+    )
+
+    assert expected_output in response["messages"][-1].content

@@ -8,6 +8,7 @@ from typing import Any
 from src.tutorials.orchestration.build_a_qa_over_sql import (
     db,
     execute_query,
+    graph,
     query_prompt_template,
     write_query,
 )
@@ -80,3 +81,29 @@ def test_query_execute() -> None:
     expected_output: dict[str: Any] = {"result": "[(8,)]"}
 
     assert execute_query({"query": ai_input}) == expected_output
+
+
+def test_graph() -> None:
+    """Test graph."""
+    user_input: str = "How many employees are there?"
+
+    expected_output_1: dict[str, Any] = {
+        "write_query": {"query": "SELECT COUNT(*) FROM Employee"},
+    }
+
+    expected_output_2: dict[str, Any] = {
+        "execute_query": {"result": "[(8,)]"},
+    }
+
+    expected_output_3: dict[str, Any] = {
+        "generate_answer": {"answer": "The number of employees is 8."},
+    }
+
+    response: Any = graph.invoke(
+        input={"question": user_input},
+        stream_mode="updates",
+    )
+
+    assert response[0] == expected_output_1
+    assert response[1] == expected_output_2
+    assert response[2] == expected_output_3

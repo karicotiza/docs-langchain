@@ -12,10 +12,13 @@ from langchain import hub
 from langchain_community.tools.sql_database.tool import QuerySQLDatabaseTool
 from langchain_community.utilities import SQLDatabase
 from langchain_ollama import ChatOllama, OllamaLLM
+from langgraph.graph import START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from src.settings import llm_model_name, llm_model_temperature, llm_model_url
 
 if TYPE_CHECKING:
+    from langchain_core.messages import BaseMessage
     from langchain_core.runnables import Runnable
 
 db: SQLDatabase = SQLDatabase.from_uri("sqlite:///data/Chinook.db")
@@ -89,3 +92,31 @@ def execute_query(state: State) -> dict[str, Any]:
     """
     execute_query_tool: QuerySQLDatabaseTool = QuerySQLDatabaseTool(db=db)
     return {"result": execute_query_tool.invoke(state["query"])}
+
+
+def generate_answer(state: State) -> dict[str, Any]:
+    """Answer question using retrieved information as context.
+
+    Args:
+        state (State): state structure.
+
+    Returns:
+        dict[str, Any]: dict with response.
+
+    """
+    prompt: str = (
+        "Given the following user question, corresponding SQL query, "
+        "and SQL result, answer the user question.\n\n"
+        f'Question: {state["question"]}\n'
+        f'SQL Query: {state["query"]}\n'
+        f'SQL Result: {state["result"]}'
+    )
+    response: BaseMessage = chat.invoke(prompt)
+
+    return {"answer": response.content}
+
+
+graph_builder: StateGraph = StateGraph(State)
+graph_builder.add_sequence([write_query, execute_query, generate_answer])
+graph_builder.add_edge(START, "write_query")
+graph: CompiledStateGraph = graph_builder.compile()

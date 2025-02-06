@@ -6,10 +6,13 @@ Build a Question/Answering system over SQL data.
 from typing import Any
 
 from src.tutorials.orchestration.build_a_qa_over_sql import (
+    agent_executor,
     db,
     execute_query,
     graph,
     query_prompt_template,
+    retriever_tool,
+    system_message,
     write_query,
 )
 
@@ -107,3 +110,71 @@ def test_graph() -> None:
     assert response[0] == expected_output_1
     assert response[1] == expected_output_2
     assert response[2] == expected_output_3
+
+
+def test_agent_prompt() -> None:
+    """Test query prompt content."""
+    template: str = (
+        "System: You are an agent designed to interact with a SQL database.\n"
+        "Given an input question, create a syntactically correct SQLite "
+        "query to run, then look at the results of the query and return the "
+        "answer.\n"
+        "Unless the user specifies a specific number of examples they wish to "
+        "obtain, always limit your query to at most 5 results.\n"
+        "You can order the results by a relevant column to return the most "
+        "interesting examples in the database.\n"
+        "Never query for all the columns from a specific table, "
+        "only ask for the relevant columns given the question.\n"
+        "You have access to tools for interacting with the database.\n"
+        "Only use the below tools. Only use the information returned by the "
+        "below tools to construct your final answer.\n"
+        "You MUST double check your query before executing it. "
+        "If you get an error while executing a query, "
+        "rewrite the query and try again.\n\n"
+        "DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) "
+        "to the database.\n\n"
+        "To start you should ALWAYS look at the tables in the database to "
+        "see what you can query.\n"
+        "Do NOT skip this step.\n"
+        "Then you should query the schema of the most relevant tables."
+    )
+
+    assert system_message == template
+
+
+# This one is very buggy
+# def test_agent_executor() -> None:
+#     """Test agent executor."""
+#     user_input: str = "Which country's customers spent the most?"
+
+#     response: Any = agent_executor.invoke(
+#         input={"messages": [{"role": "user", "content": user_input}]},
+#     )
+
+#     assert "Japan" in response["messages"][-1].content
+
+
+def test_retriever_tool() -> None:
+    """Test retriever tool."""
+    user_input: str = "Alice Chains"
+    expected_output: str = (
+        "Alice In Chains\n\n"
+        "Somewhere in Time\n\n"
+        "Stone Temple Pilots\n\n"
+        "Velvet Revolver\n\n"
+        "System Of A Down"
+    )
+
+    assert retriever_tool.invoke(user_input) == expected_output
+
+
+# This one is very buggy
+# def test_agent_executor() -> None:
+#     """Test agent."""
+#     user_input: str = "How many albums does alis in chain have?"
+
+#     response: Any = agent_executor.invoke(
+#         input={"messages": [{"role": "user", "content": user_input}]},
+#     )
+
+#     assert "1" in response["messages"][-1].content

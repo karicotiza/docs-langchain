@@ -6,16 +6,32 @@ Notes:
 * Looks like structured output can't handle SQL queries.
 
 """
+import ast
+import re
 from typing import TYPE_CHECKING, Annotated, Any, TypedDict
 
 from langchain import hub
+from langchain.agents.agent_toolkits import create_retriever_tool
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.tools.sql_database.tool import QuerySQLDatabaseTool
 from langchain_community.utilities import SQLDatabase
-from langchain_ollama import ChatOllama, OllamaLLM
+from langchain_core.messages import HumanMessage
+from langchain_core.tools import BaseTool
+from langchain_core.tools.simple import Tool
+from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_core.vectorstores.base import VectorStoreRetriever
+from langchain_ollama import ChatOllama, OllamaEmbeddings, OllamaLLM
 from langgraph.graph import START, StateGraph
-from langgraph.graph.state import CompiledStateGraph
+from langgraph.graph.state import CompiledGraph, CompiledStateGraph
+from langgraph.prebuilt import create_react_agent
 
-from src.settings import llm_model_name, llm_model_temperature, llm_model_url
+from src.settings import (
+    embedding_model_name,
+    embedding_model_url,
+    llm_model_name,
+    llm_model_temperature,
+    llm_model_url,
+)
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
@@ -120,3 +136,60 @@ graph_builder: StateGraph = StateGraph(State)
 graph_builder.add_sequence([write_query, execute_query, generate_answer])
 graph_builder.add_edge(START, "write_query")
 graph: CompiledStateGraph = graph_builder.compile()
+
+toolkit: SQLDatabaseToolkit = SQLDatabaseToolkit(db=db, llm=chat)
+tools: list[BaseTool] = toolkit.get_tools()
+
+prompt_template: Any = hub.pull("langchain-ai/sql-agent-system-prompt")
+system_message = prompt_template.format(dialect="SQLite", top_k=5)
+
+agent_executor: CompiledGraph = create_react_agent(
+    model=chat,
+    tools=tools,
+    prompt=system_message,
+)
+
+
+def _query_as_list(db: SQLDatabase, query: str) -> list[str]:
+    res = db.run(query)
+    res = [el for sub in ast.literal_eval(res) for el in sub if el]
+    res = [re.sub(r"\b\d+\b", "", string).strip() for string in res]
+    return list(set(res))
+
+
+artists: list[str] = _query_as_list(db, "SELECT Name FROM Artist")
+albums: list[str] = _query_as_list(db, "SELECT Title FROM Album")
+
+embeddings: OllamaEmbeddings = OllamaEmbeddings(
+    base_url=embedding_model_url,
+    model=embedding_model_name,
+)
+
+vector_store: InMemoryVectorStore = InMemoryVectorStore(embeddings)
+ids: list[str] = vector_store.add_texts(artists + albums)
+retriever: VectorStoreRetriever = vector_store.as_retriever(
+    search_kwargs={"k": 5},
+)
+
+description: str = (
+    "Use to look up values to filter on. Input is an approximate spelling "
+    "of the proper noun, output is valid proper nouns. Use the noun most "
+    "similar to the search."
+)
+
+retriever_tool: Tool = create_retriever_tool(
+    retriever,
+    name="search_proper_nouns",
+    description=description,
+)
+
+suffix: str = (
+    "If you need to filter on a proper noun like a Name, "
+    "you must ALWAYS first look up the filter value using the "
+    "'search_proper_nouns' tool! Do not try to guess at the proper name - "
+    "use this function to find similar ones."
+)
+
+system = f"{system_message}\n\n{suffix}"
+tools.append(retriever_tool)
+agent: CompiledGraph = create_react_agent(chat, tools, prompt=system)

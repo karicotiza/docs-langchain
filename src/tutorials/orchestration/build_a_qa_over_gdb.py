@@ -3,9 +3,20 @@
 Build a Question Answering application over a Graph Database.
 """
 
-from langchain_neo4j import Neo4jGraph
+from langchain_neo4j import GraphCypherQAChain, Neo4jGraph
+from langchain_ollama import ChatOllama
 
-from src.settings import neo4j_password, neo4j_url, neo4j_user
+from src.settings import (
+    llm_model_name,
+    llm_model_temperature,
+    llm_model_url,
+    neo4j_password,
+    neo4j_url,
+    neo4j_user,
+    phi4_model_name,
+    phi4_model_temperature,
+    phi4_model_url,
+)
 
 graph: Neo4jGraph = Neo4jGraph(
     url=neo4j_url,
@@ -49,4 +60,30 @@ enhanced_graph: Neo4jGraph = Neo4jGraph(
     username=neo4j_user,
     password=neo4j_password,
     enhanced_schema=True,
+)
+
+llama_chat: ChatOllama = ChatOllama(
+    base_url=llm_model_url,
+    model=llm_model_name,
+    temperature=llm_model_temperature,
+)
+
+phi4_chat: ChatOllama = ChatOllama(
+    base_url=phi4_model_url,
+    model=phi4_model_name,
+    temperature=phi4_model_temperature,
+)
+
+llama_chain: GraphCypherQAChain = GraphCypherQAChain.from_llm(
+    graph=enhanced_graph,
+    llm=llama_chat,
+    verbose=True,
+    allow_dangerous_requests=True,
+)
+
+phi4_chain: GraphCypherQAChain = GraphCypherQAChain.from_llm(
+    graph=enhanced_graph,
+    llm=phi4_chat,
+    verbose=True,
+    allow_dangerous_requests=True,
 )

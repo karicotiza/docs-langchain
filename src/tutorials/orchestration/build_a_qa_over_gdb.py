@@ -43,3 +43,10 @@ movies_query: str = (
 )
 
 graph.query(movies_query)
+
+enhanced_graph: Neo4jGraph = Neo4jGraph(
+    url=neo4j_url,
+    username=neo4j_user,
+    password=neo4j_password,
+    enhanced_schema=True,
+)

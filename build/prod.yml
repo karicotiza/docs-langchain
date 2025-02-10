@@ -110,6 +110,18 @@ services:
       MILVUS_URL: "http://milvus:19530"
     ports:
       - 3000:3000
+  
+  neo4j:
+    container_name: db-neo4j
+    image: neo4j:5.26.2-community-ubi9
+    ports:
+      - 7474:7474
+      - 7687:7687
+    volumes:
+      - ../backup/neo4j:/data
+    environment:
+      - NEO4J_AUTH=none
+      - NEO4JLABS_PLUGINS=["apoc"]
 
 networks:
   default:

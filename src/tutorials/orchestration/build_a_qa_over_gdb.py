@@ -1,11 +1,24 @@
 """Tutorial module.
 
 Build a Question Answering application over a Graph Database.
+
+Notes:
+* LLaMa3.2:3B is't capable with Cypher, so it can't pass the
+"test_graph_cypher_qa_chain" test.
+* Phi4 is capable with Cypher, but doesn't support function calling. So it can
+pass the "test_graph_cypher_qa_chain" test, but can't pass the "test_flow"
+test. I will leave commented code here and in "./build/prod.yml" to run phi4.
+* Right now my machine can't launch LLMs as big as LLaMa3.3:70B, but i guess
+it can pas both tests.
+
 """
 from __future__ import annotations
+from enum import StrEnum
+from dataclasses import dataclass
+
 
 from operator import add
-from typing import TYPE_CHECKING, Annotated, Literal, TypedDict
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypedDict
 
 from langchain_core.example_selectors import SemanticSimilarityExampleSelector
 from langchain_core.output_parsers import StrOutputParser
@@ -17,6 +30,7 @@ from langchain_neo4j.chains.graph_qa.cypher_utils import (
 )
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 from neo4j.exceptions import CypherSyntaxError
 from pydantic import BaseModel, Field
 
@@ -29,13 +43,56 @@ from src.settings import (
     neo4j_password,
     neo4j_url,
     neo4j_user,
-    phi4_model_name,
-    phi4_model_temperature,
-    phi4_model_url,
+    # phi4_model_name,
+    # phi4_model_temperature,
+    # phi4_model_url,
 )
 
 if TYPE_CHECKING:
     from langchain_core.runnables import RunnableSerializable
+
+
+class Role(StrEnum):
+    """LangChain role adapter."""
+
+    system = "system"
+    human = "human"
+
+
+@dataclass(slots=True)
+class Message:
+    """Message structure."""
+
+    role: Role
+    text: str
+
+
+    def items(self) -> tuple[str, str]:  # noqa: WPS
+        """Get structure as key, value.
+
+        Returns:
+            tuple[str, str]: role as a key and text as a value.
+
+        """
+        return (self.role, self.text)
+
+
+def prompt(*args: Message) -> ChatPromptTemplate:
+    """Make prompt for langchain.
+
+    Args:
+        args (list[Message]): list of tuple with roles and
+            messages. You can set placeholders for values like "{value}", they
+            will be invoked by model or chain later.
+
+    Returns:
+        ChatPromptTemplate: prepared ChatPromptTemplate.
+
+    """
+    return ChatPromptTemplate.from_messages(
+        messages=[message.items() for message in args],
+    )
+
 
 graph: Neo4jGraph = Neo4jGraph(
     url=neo4j_url,
@@ -81,31 +138,31 @@ enhanced_graph: Neo4jGraph = Neo4jGraph(
     enhanced_schema=True,
 )
 
-llama_chat: ChatOllama = ChatOllama(
+chat: ChatOllama = ChatOllama(
     base_url=llm_model_url,
     model=llm_model_name,
     temperature=llm_model_temperature,
 )
 
-phi4_chat: ChatOllama = ChatOllama(
-    base_url=phi4_model_url,
-    model=phi4_model_name,
-    temperature=phi4_model_temperature,
-)
-
-llama_chain: GraphCypherQAChain = GraphCypherQAChain.from_llm(
+chain: GraphCypherQAChain = GraphCypherQAChain.from_llm(
     graph=enhanced_graph,
-    llm=llama_chat,
+    llm=chat,
     verbose=True,
     allow_dangerous_requests=True,
 )
 
-phi4_chain: GraphCypherQAChain = GraphCypherQAChain.from_llm(
-    graph=enhanced_graph,
-    llm=phi4_chat,
-    verbose=True,
-    allow_dangerous_requests=True,
-)
+# phi4_chat: ChatOllama = ChatOllama(
+#     base_url=phi4_model_url,
+#     model=phi4_model_name,
+#     temperature=phi4_model_temperature,
+# )
+
+# phi4_chain: GraphCypherQAChain = GraphCypherQAChain.from_llm(
+#     graph=enhanced_graph,
+#     llm=phi4_chat,
+#     verbose=True,
+#     allow_dangerous_requests=True,
+# )
 
 
 class InputState(TypedDict):
@@ -159,7 +216,7 @@ class GuardrailsOutput(BaseModel):
 
 guardrails_chain: RunnableSerializable[dict, dict | BaseModel] = (
     guardrails_prompt
-    | llama_chat.with_structured_output(GuardrailsOutput)
+    | chat.with_structured_output(GuardrailsOutput)
 )
 
 
@@ -309,7 +366,7 @@ text2cypher_prompt: ChatPromptTemplate = ChatPromptTemplate.from_template(
 
 text2cypher_chain: RunnableSerializable[dict, str] = (
     text2cypher_prompt
-    | llama_chain
+    | chain
     | StrOutputParser()
 )
 
@@ -332,13 +389,19 @@ def generate_cypher(state: OverallState) -> OverallState:
         )
     ]
 
-    generated_cypher = text2cypher_chain.invoke(
-        {
-            "question": state.get("question"),
-            "fewshot_examples": "\n\n".join(fewshot_examples),
-            "schema": enhanced_graph.schema,
-        },
-    )
+    try:
+        generated_cypher = text2cypher_chain.invoke(
+            {
+                "question": state.get("question"),
+                "fewshot_examples": "\n\n".join(fewshot_examples),
+                "schema": enhanced_graph.schema,
+            },
+        )
+    except CypherSyntaxError:
+        return {
+            "cypher_statement": "",
+            "steps": ["generate_cypher"],
+        }
 
     return {
         "cypher_statement": generated_cypher,
@@ -411,7 +474,7 @@ class ValidateCypherOutput(BaseModel):
 
 validate_cypher_chain: RunnableSerializable[dict, dict | BaseModel] = (
     validate_cypher_prompt
-    | llama_chat.with_structured_output(ValidateCypherOutput)
+    | chat.with_structured_output(ValidateCypherOutput)
 )
 
 corrector_schema: list[Schema] = [
@@ -434,6 +497,16 @@ def _check_filter(llm_filter: Any) -> bool:
     )["type"] != "STRING"
 
 
+def _next_action(mapping_errors: list, errors: list) -> str:
+    if mapping_errors:
+        return "end"
+
+    if errors:
+        return "correct_cypher"
+
+    return "execute_cypher"
+
+
 def validate_cypher(state: OverallState) -> OverallState:
     """Validate Cypher statements and maps any property values to the database.
 
@@ -444,8 +517,8 @@ def validate_cypher(state: OverallState) -> OverallState:
         OverallState: overall state.
 
     """
-    errors = []
-    mapping_errors = []
+    errors: list = []
+    mapping_errors: list = []
 
     try:
         enhanced_graph.query(f"EXPLAIN {state['cypher_statement']}")
@@ -455,12 +528,7 @@ def validate_cypher(state: OverallState) -> OverallState:
     corrected_cypher: str = cypher_query_corrector(state["cypher_statement"])
 
     if not corrected_cypher:
-        errors.append(
-            "The generated Cypher statement doesn't fit the graph schema"
-        )
-
-    if corrected_cypher != state["cypher_statement"]:
-        print("Relationship direction was corrected")
+        errors.append("The generated Cypher statement doesn't fit the schema")
 
     llm_output: dict | BaseModel = validate_cypher_chain.invoke(
         input={
@@ -484,22 +552,11 @@ def validate_cypher(state: OverallState) -> OverallState:
             )
 
             if not mapping:
-                print(
-                    f"Missing value mapping for {filter.node_label} on property {filter.property_key} with value {filter.property_value}"  # noqa: E501
-                )
-
                 mapping_errors.append(
                     f"Missing value mapping for {filter.node_label} on property {filter.property_key} with value {filter.property_value}"  # noqa: E501
                 )
 
-    if mapping_errors:
-        next_action = "end"
-
-    elif errors:
-        next_action = "correct_cypher"
-
-    else:
-        next_action = "execute_cypher"
+    next_action: str = _next_action(mapping_errors, errors)
 
     return {
         "next_action": next_action,
@@ -509,59 +566,55 @@ def validate_cypher(state: OverallState) -> OverallState:
     }
 
 
-correct_cypher_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            (
-                "You are a Cypher expert reviewing a statement written by a junior developer. "
-                "You need to correct the Cypher statement based on the provided errors. No pre-amble."
-                "Do not wrap the response in any backticks or anything else. Respond with a Cypher statement only!"
-            ),
-        ),
-        (
-            "human",
-            (
-                """Check for invalid syntax or semantics and return a corrected Cypher statement.
-
-Schema:
-{schema}
-
-Note: Do not include any explanations or apologies in your responses.
-Do not wrap the response in any backticks or anything else.
-Respond with a Cypher statement only!
-
-Do not respond to any questions that might ask anything else than for you to construct a Cypher statement.
-
-The question is:
-{question}
-
-The Cypher statement is:
-{cypher}
-
-The errors are:
-{errors}
-
-Corrected Cypher statement: """
-            ),
-        ),
-    ]
+correct_cypher_template: str = (
+    "You are a Cypher expert reviewing a statement "
+    "written by a junior developer. "
+    "You need to correct the Cypher statement based on the provided errors. "
+    "No pre-amble. Do not wrap the response in any backticks "
+    "or anything else. Respond with a Cypher statement only!\n\n"
+    "Check for invalid syntax or semantics "
+    "and return a corrected Cypher statement.\n\n"
+    "Schema:\n{schema}\n\n"
+    "Note: Do not include any explanations or apologies in your responses. "
+    "Do not wrap the response in any backticks or anything else. "
+    "Respond with a Cypher statement only!\n\n"
+    "Do not respond to any questions that might ask anything "
+    "else than for you to construct a Cypher statement.\n\n"
+    "The question is:\n{question}\n\n"
+    "The Cypher statement is:\n{cypher}\n\n"
+    "The errors are:\n{errors}\n\n"
+    "Corrected Cypher statement: "
 )
 
-correct_cypher_chain = correct_cypher_prompt | llama_chat | StrOutputParser()
+
+correct_cypher_prompt: ChatPromptTemplate = ChatPromptTemplate.from_template(
+    template=correct_cypher_template,
+)
+
+correct_cypher_chain: RunnableSerializable[dict, str] = (
+    correct_cypher_prompt
+    | chat
+    | StrOutputParser()
+)
 
 
 def correct_cypher(state: OverallState) -> OverallState:
-    """
-    Correct the Cypher statement based on the provided errors.
+    """Correct the Cypher statement based on the provided errors.
+
+    Args:
+        state (OverallState): overall state.
+
+    Returns:
+        OverallState: overall state.
+
     """
     corrected_cypher = correct_cypher_chain.invoke(
-        {
+        input={
             "question": state.get("question"),
             "errors": state.get("cypher_errors"),
             "cypher": state.get("cypher_statement"),
             "schema": enhanced_graph.schema,
-        }
+        },
     )
 
     return {
@@ -570,87 +623,138 @@ def correct_cypher(state: OverallState) -> OverallState:
         "steps": ["correct_cypher"],
     }
 
-no_results = "I couldn't find any relevant information in the database"
+
+no_results: str = "I couldn't find any relevant information in the database"
 
 
 def execute_cypher(state: OverallState) -> OverallState:
-    """
-    Executes the given Cypher statement.
-    """
+    """Execute the given Cypher statement.
 
-    records = enhanced_graph.query(state.get("cypher_statement"))
+    Args:
+        state (OverallState): overall state.
+
+    Returns:
+        OverallState: overall state.
+
+    """
+    records: list[dict[str, Any]] = enhanced_graph.query(
+        query=state["cypher_statement"],
+    )
+
     return {
         "database_records": records if records else no_results,
         "next_action": "end",
         "steps": ["execute_cypher"],
     }
 
-generate_final_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are a helpful assistant",
-        ),
-        (
-            "human",
-            (
-                """Use the following results retrieved from a database to provide
-a succinct, definitive answer to the user's question.
 
-Respond as if you are answering the question directly.
-
-Results: {results}
-Question: {question}"""
-            ),
+generate_final_prompt: ChatPromptTemplate = prompt(
+    Message(
+        role=Role.system,
+        text="You are a helpful assistant",
+    ),
+    Message(
+        role=Role.human,
+        text=(
+            "Use the following results retrieved from a database to "
+            "provide\n a succinct, definitive answer to the user's "
+            "question.\n\n"
+            "Respond as if you are answering the question directly.\n\n"
+            "Results: {results}\n"
+            "Question: {question}"
         ),
-    ]
+    ),
 )
 
-generate_final_chain = generate_final_prompt | llama_chat | StrOutputParser()
+generate_final_chain: RunnableSerializable[dict, str] = (
+    generate_final_prompt
+    | chat
+    | StrOutputParser()
+)
 
 
 def generate_final_answer(state: OverallState) -> OutputState:
-    """
-    Decides if the question is related to movies.
+    """Decide if the question is related to movies.
+
+    Args:
+        state (OverallState): overall state.
+
+    Returns:
+        OutputState: output state.
+
     """
     final_answer = generate_final_chain.invoke(
-        {"question": state.get("question"), "results": state.get("database_records")}
+        input={
+            "question": state["question"],
+            "results": state["database_records"],
+        },
     )
-    return {"answer": final_answer, "steps": ["generate_final_answer"]}
+
+    return {
+        "answer": final_answer,
+        "steps": ["generate_final_answer"],
+    }
+
 
 def guardrails_condition(
     state: OverallState,
 ) -> Literal["generate_cypher", "generate_final_answer"]:
-    if state.get("next_action") == "end":
+    """Check guardrails condition.
+
+    Returns:
+        Literal["generate_cypher", "generate_final_answer"]: one of these
+
+    """
+    if state["next_action"] == "end":
         return "generate_final_answer"
-    elif state.get("next_action") == "movie":
+
+    if state["next_action"] == "movie":
         return "generate_cypher"
+
+    return "generate_cypher"
 
 
 def validate_cypher_condition(
     state: OverallState,
 ) -> Literal["generate_final_answer", "correct_cypher", "execute_cypher"]:
+    """Check guardrails condition.
+
+    Returns:
+        Literal["generate_final_answer", "correct_cypher", "execute_cypher"]:
+            one of these.
+
+    """
     if state.get("next_action") == "end":
         return "generate_final_answer"
-    elif state.get("next_action") == "correct_cypher":
+
+    if state.get("next_action") == "correct_cypher":
         return "correct_cypher"
-    elif state.get("next_action") == "execute_cypher":
+
+    if state.get("next_action") == "execute_cypher":
         return "execute_cypher"
 
-langgraph = StateGraph(OverallState, input=InputState, output=OutputState)
-langgraph.add_node(guardrails)
-langgraph.add_node(generate_cypher)
-langgraph.add_node(validate_cypher)
-langgraph.add_node(correct_cypher)
-langgraph.add_node(execute_cypher)
-langgraph.add_node(generate_final_answer)
+    return "execute_cypher"
 
-langgraph.add_edge(START, "guardrails")
-langgraph.add_conditional_edges("guardrails", guardrails_condition)
-langgraph.add_edge("generate_cypher", "validate_cypher")
-langgraph.add_conditional_edges("validate_cypher", validate_cypher_condition)
-langgraph.add_edge("execute_cypher", "generate_final_answer")
-langgraph.add_edge("correct_cypher", "validate_cypher")
-langgraph.add_edge("generate_final_answer", END)
 
-langgraph = langgraph.compile()
+builder: StateGraph = StateGraph(
+    state_schema=OverallState,
+    input=InputState,
+    output=OutputState,
+)
+
+builder.add_node(guardrails)
+builder.add_node(generate_cypher)
+builder.add_node(validate_cypher)
+builder.add_node(correct_cypher)
+builder.add_node(execute_cypher)
+builder.add_node(generate_final_answer)
+
+builder.add_edge(START, "guardrails")
+builder.add_conditional_edges("guardrails", guardrails_condition)
+builder.add_edge("generate_cypher", "validate_cypher")
+builder.add_conditional_edges("validate_cypher", validate_cypher_condition)
+builder.add_edge("execute_cypher", "generate_final_answer")
+builder.add_edge("correct_cypher", "validate_cypher")
+builder.add_edge("generate_final_answer", END)
+
+flow: CompiledStateGraph = builder.compile()

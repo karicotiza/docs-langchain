@@ -22,26 +22,26 @@ services:
               count: 1
               capabilities: [gpu]
 
-  ollama-phi4:
-    container_name: ms-ollama-phi4
-    image: ollama/ollama:0.5.4
-    ports:
-      - 11436:11434
-    volumes:
-      - ../build/:/build/:ro
-    healthcheck:
-      test: [ "CMD", "/build/start_phi4_model.sh" ]
-      interval: 3h
-      timeout: 600s
-      retries: 5
-      start_period: 5s
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+  # ollama-phi4:
+  #   container_name: ms-ollama-phi4
+  #   image: ollama/ollama:0.5.4
+  #   ports:
+  #     - 11436:11434
+  #   volumes:
+  #     - ../build/:/build/:ro
+  #   healthcheck:
+  #     test: [ "CMD", "/build/start_phi4_model.sh" ]
+  #     interval: 3h
+  #     timeout: 600s
+  #     retries: 5
+  #     start_period: 5s
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
   
   ollama-bge-m3:
     container_name: ms-ollama-bge-m3

@@ -6,11 +6,11 @@ Build a Question Answering application over a Graph Database.
 from typing import Any
 
 from src.tutorials.orchestration.build_a_qa_over_gdb import (
+    chain,
+    # phi4_chain,
     enhanced_graph,
+    flow,
     graph,
-    langgraph,
-    llama_chain,
-    phi4_chain,
 )
 
 
@@ -48,7 +48,7 @@ def test_enhanced_graph_schema() -> None:
         "- **Person**\n"
         '  - `name`: STRING Example: "John Lasseter"\n'
         "- **Genre**\n"
-        '  - `name`: STRING Example: "Adventure"\n'
+        '  - `name`: STRING Example: "Adventure"\n',
     )
 
 
@@ -56,7 +56,7 @@ def test_enhanced_graph_schema() -> None:
 def test_graph_cypher_qa_chain_1() -> None:
     """Test graph cypher qa chain 1."""
     user_input: str = "What was the cast of the Casino?"
-    response: dict[str, Any] = llama_chain.invoke({"query": user_input})
+    response: dict[str, Any] = chain.invoke({"query": user_input})
 
     assert response["result"] == (
         "I don't have enough information to provide an accurate answer."
@@ -64,21 +64,20 @@ def test_graph_cypher_qa_chain_1() -> None:
 
 
 # Phi4 can handle Cypher requests
-def test_graph_cypher_qa_chain_2() -> None:
-    """Test graph cypher qa chain 2."""
-    user_input: str = "What was the cast of the Casino?"
-    response: dict[str, Any] = phi4_chain.invoke({"query": user_input})
+# def test_graph_cypher_qa_chain_2() -> None:
+#     """Test graph cypher qa chain 2."""
+#     user_input: str = "What was the cast of the Casino?"
+#     response: dict[str, Any] = phi4_chain.invoke({"query": user_input})
 
-    assert response["result"] == (
-        'The cast of "Casino" included Joe Pesci, Sharon Stone, '
-        "Robert De Niro, and James Woods."
-    )
+#     assert response["result"] == (
+#         'The cast of "Casino" included Joe Pesci, Sharon Stone, '
+#         "Robert De Niro, and James Woods."
+#     )
 
 
-# But Phi4 can't handle function calling
-def test_lang_graph() -> None:
-    """Test langgraph."""
-    response: Any = langgraph.invoke(
+def test_flow_1() -> None:
+    """Test flow 1."""
+    response: Any = flow.invoke(
         input={"question": "What's the weather in Spain?"},
     )
 
@@ -93,3 +92,29 @@ def test_lang_graph() -> None:
         ),
         "steps": ["guardrail", "generate_final_answer"],
     }
+
+
+# # LLaMa3.2:3B can't handle Cypher requests
+# def test_flow_2() -> None:
+#     """Test flow 2."""
+#     response: Any = flow.invoke(
+#         input={"question": "What was the cast of the Casino?"},
+#     )
+
+#     assert response == {
+#         "answer": (
+#             'The cast of "Casino" includes Robert De Niro, Joe Pesci, '
+#             "Sharon Stone, and James Woods."
+#         ),
+#         "steps": [
+#             "guardrail",
+#             "generate_cypher",
+#             "validate_cypher",
+#             "execute_cypher",
+#             "generate_final_answer",
+#         ],
+#         "cypher_statement": (
+#             "MATCH (m:Movie {title: 'Casino'})<-[:ACTED_IN]-(a:Person) "
+#             "RETURN a.name"
+#         ),
+#     }

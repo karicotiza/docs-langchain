@@ -13,7 +13,6 @@ langchain_community==0.3.14
 # LangChain integration with Neo4j
 langchain-neo4j==0.3.0
 
-
 # LangChain memory for chats
 langgraph==0.2.69
 
